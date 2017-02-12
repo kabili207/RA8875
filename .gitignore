@@ -1,0 +1,13 @@
+*.user
+*.cache
+*.opensdf
+*.sdf
+*.suo
+*.orig
+
+#Ignore binary data
+/.vs/
+/build/
+
+
+
