@@ -7,53 +7,27 @@ This program is distributed under the GPL, version 2
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <ftdi.h>
+#include <FT232H.h>
+#include <windows.h>
 
 int main(void)
 {
-	int ret;
-	struct ftdi_context *ftdi;
-	struct ftdi_version_info version;
-	if ((ftdi = ftdi_new()) == 0)
+	FT232H ft232h;
+	if (!ft232h.open())
 	{
-		fprintf(stderr, "ftdi_new failed\n");
-		return EXIT_FAILURE;
+		return -1;
 	}
 
-	version = ftdi_get_library_version();
-	printf("Initialized libftdi %s (major: %d, minor: %d, micro: %d, snapshot ver: %s)\n",
-		version.version_str, version.major, version.minor, version.micro,
-		version.snapshot_str);
-
-	if ((ret = ftdi_usb_open(ftdi, 0x0403, 0x6014)) < 0)
+	SPI spi(&ft232h, Pin::C0, 1000000, 0, false);
+	ft232h.setup(Pin::D7, Mode::Out);
+	
+	for (int i = 0; i < 10; i++)
 	{
-		fprintf(stderr, "unable to open ftdi device: %d (%s)\n", ret, ftdi_get_error_string(ftdi));
-		ftdi_free(ftdi);
-		return EXIT_FAILURE;
+		ft232h.set_high(Pin::D7);
+		Sleep(500);
+		ft232h.set_low(Pin::D7);
+		Sleep(500);
 	}
 
-	ftdi_usb_reset(ftdi);
-
-
-
-
-
-
-
-
-
-
-
-
-	// exit
-	if ((ret = ftdi_usb_close(ftdi)) < 0)
-	{
-		fprintf(stderr, "unable to close ftdi device: %d (%s)\n", ret, ftdi_get_error_string(ftdi));
-		ftdi_free(ftdi);
-		return EXIT_FAILURE;
-	}
-
-	ftdi_free(ftdi);
-
-	return EXIT_SUCCESS;
+	ft232h.close();
 }
