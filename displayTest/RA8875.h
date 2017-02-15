@@ -59,7 +59,7 @@ namespace hw
 		void    textColor(uint16_t foreColor, uint16_t bgColor) const;
 		void    textTransparent(uint16_t foreColor) const;
 		void    textEnlarge(uint8_t scale);
-		void    textWrite(const char* buffer, uint16_t len = 0) const;
+		void    textWrite(const char* buffer) const;
 
 		/* Graphics functions */
 		void    graphicsMode() const;
@@ -68,17 +68,17 @@ namespace hw
 
 		/* HW accelerated wrapper functions (override Adafruit_GFX prototypes) */
 		void    fillScreen(uint16_t color) const;
-		void    drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) const;
-		void    drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) const;
-		void    fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) const;
-		void    drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) const;
-		void    fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) const;
-		void    drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) const;
-		void    fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) const;
-		void    drawEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color) const;
-		void    fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color) const;
-		void    drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color) const;
-		void    fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color) const;
+		void    drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color) const;
+		void    drawRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) const;
+		void    fillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) const;
+		void    drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) const;
+		void    fillCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) const;
+		void    drawTriangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) const;
+		void    fillTriangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) const;
+		void    drawEllipse(uint16_t xCenter, uint16_t yCenter, uint16_t longAxis, uint16_t shortAxis, uint16_t color) const;
+		void    fillEllipse(uint16_t xCenter, uint16_t yCenter, uint16_t longAxis, uint16_t shortAxis, uint16_t color) const;
+		void    drawCurve(uint16_t xCenter, uint16_t yCenter, uint16_t longAxis, uint16_t shortAxis, uint8_t curvePart, uint16_t color) const;
+		void    fillCurve(uint16_t xCenter, uint16_t yCenter, uint16_t longAxis, uint16_t shortAxis, uint8_t curvePart, uint16_t color) const;
 
 		/* Backlight */
 		void    GPIOX(bool on) const;
@@ -111,11 +111,11 @@ namespace hw
 		void initialize() const;
 
 		/* GFX Helper Functions */
-		void circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled) const;
-		void rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled) const;
-		void triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled) const;
-		void ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled) const;
-		void curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled) const;
+		void circleHelper(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color, bool filled) const;
+		void rectHelper(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, bool filled) const;
+		void triangleHelper(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color, bool filled) const;
+		void ellipseHelper(uint16_t xCenter, uint16_t yCenter, uint16_t longAxis, uint16_t shortAxis, uint16_t color, bool filled) const;
+		void curveHelper(uint16_t xCenter, uint16_t yCenter, uint16_t longAxis, uint16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled) const;
 
 		/* timing helper */
 		static void delay(int ms);

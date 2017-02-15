@@ -4,6 +4,12 @@
 
 #include "FT232H.h"
 #include "RA8875.h"
+#include <thread>
+
+static void delay(int ms)
+{
+	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
 
 int main(void)
 {
@@ -60,6 +66,45 @@ int main(void)
 	tft.textSetCursor(100, 150);
 	tft.textEnlarge(2);
 	tft.textWrite(string);
+	delay(500);
+
+	// the other testing stuff.
+	tft.graphicsMode();
+
+	tft.fillScreen(RA8875_RED);
+	delay(500);
+	tft.fillScreen(RA8875_YELLOW);
+	delay(500);
+	tft.fillScreen(RA8875_GREEN);
+	delay(500);
+	tft.fillScreen(RA8875_CYAN);
+	delay(500);
+	tft.fillScreen(RA8875_MAGENTA);
+	delay(500);
+	tft.fillScreen(RA8875_BLACK);
+
+	// Try some GFX acceleration!
+	for (int i = 0; i < 50; ++i)
+	{
+		int x = rand() % tft.width();
+		int y = rand() % tft.height();
+		tft.fillCircle(x, y, 50, rand() & 0xffff);
+		tft.drawCircle(x, y, 50, RA8875_BLACK);
+	}
+
+	tft.fillRect(11, 11, 398, 198, RA8875_BLUE);
+	tft.drawRect(10, 10, 400, 200, RA8875_GREEN);
+	//tft.fillRoundRect(200, 10, 200, 100, 10, RA8875_RED);
+	//tft.drawPixel(10, 10, RA8875_BLACK);
+	//tft.drawPixel(11, 11, RA8875_BLACK);
+	tft.drawLine(10, 10, 200, 100, RA8875_RED);
+	tft.drawTriangle(200, 15, 250, 100, 150, 125, RA8875_BLACK);
+	tft.fillTriangle(200, 16, 249, 99, 151, 124, RA8875_YELLOW);
+	tft.drawEllipse(300, 100, 100, 40, RA8875_BLACK);
+	tft.fillEllipse(300, 100, 98, 38, RA8875_GREEN);
+	// Argument 5 (curvePart) is a 2-bit value to control each corner (select 0, 1, 2, or 3)
+	tft.drawCurve(50, 100, 80, 40, 2, RA8875_BLACK);
+	tft.fillCurve(50, 100, 78, 38, 2, RA8875_WHITE);
 
 	ft232h.close();
 	return 0;
