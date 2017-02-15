@@ -45,7 +45,7 @@ namespace hw
 			_800x480
 		};
 
-		RA8875(IDevice& device, Pin cs = Pin::C0, Pin rst = Pin::D7);
+		RA8875(IDevice& device, Pin cs = Pin::D3, Pin rst = Pin::D4);
 		~RA8875();
 
 		bool    begin(DisplaySize s);

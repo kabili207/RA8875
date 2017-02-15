@@ -18,5 +18,5 @@ The code assumes the following connections:
 * Connect (FT232H)D0  -> (RA8875)SCK
 * Connect (FT232H)D1  -> (RA8875)MOSI
 * Connect (FT232H)D2  -> (RA8875)MISO
-* Connect (FT232H)D7  -> (RA8875)RST
-* Connect (FT232H)C0  -> (RA8875)CS
+* Connect (FT232H)D3  -> (RA8875)CS
+* Connect (FT232H)D4  -> (RA8875)RST
