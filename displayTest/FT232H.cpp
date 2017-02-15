@@ -132,7 +132,7 @@ namespace hw
 		// Turn on / off three phase clock(needed for I2C).
 		// Also adjust the frequency for three - phase clocking as specified in section 2.2.4
 		// of this document:
-		//   http ://www.ftdichip.com/Support/Documents/AppNotes/AN_255_USB%20to%20I2C%20Example%20using%20the%20FT232H%20and%20FT201X%20devices.pdf
+		//   http://www.ftdichip.com/Support/Documents/AppNotes/AN_255_USB%20to%20I2C%20Example%20using%20the%20FT232H%20and%20FT201X%20devices.pdf
 		if (three_phase)
 			writeByte(0x8C);
 		else
@@ -140,7 +140,7 @@ namespace hw
 
 		// Compute divisor for requested clock.
 		// Use equation from section 3.8.1 of:
-		//  http ://www.ftdichip.com/Support/Documents/AppNotes/AN_108_Command_Processor_for_MPSSE_and_MCU_Host_Bus_Emulation_Modes.pdf
+		//  http://www.ftdichip.com/Support/Documents/AppNotes/AN_108_Command_Processor_for_MPSSE_and_MCU_Host_Bus_Emulation_Modes.pdf
 		// Note equation is using 60mhz master clock instead of 12mhz.
 		int divisor = int(ceil((30000000.0 - float(clock_hz)) / float(clock_hz))) & 0xFFFF;
 		if (three_phase)

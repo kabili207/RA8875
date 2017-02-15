@@ -105,14 +105,11 @@ namespace hw
 	{
 		// Build command to read and write SPI data.
 		uint8_t command = uint8_t(0x10 | (m_lsbfirst << 3) | m_write_clock_ve);
-		uint8_t len_low = uint8_t((length - 1) & 0xff);
-		uint8_t len_high = uint8_t((length - 1) >> 8);
 
 		// execute.
 		m_device->setLow(m_cs);
 		m_device->writeByte(command);
-		m_device->writeByte(len_low);
-		m_device->writeByte(len_high);
+		m_device->writeUInt16(length-1);
 		m_device->write(data, length);
 		m_device->writeByte(0x87);
 		m_device->setHigh(m_cs);
@@ -126,14 +123,11 @@ namespace hw
 	{
 		// Build command to read and write SPI data.
 		uint8_t command = uint8_t(0x20 | (m_lsbfirst << 3) | (m_read_clock_ve << 2));
-		uint8_t len_low = uint8_t((length - 1) & 0xff);
-		uint8_t len_high = uint8_t((length - 1) >> 8);
 
 		// execute.
 		m_device->setLow(m_cs);
 		m_device->writeByte(command);
-		m_device->writeByte(len_low);
-		m_device->writeByte(len_high);
+		m_device->writeUInt16(length - 1);
 		m_device->writeByte(0x87);
 		m_device->setHigh(m_cs);
 
@@ -149,14 +143,11 @@ namespace hw
 	{
 		// Build command to read and write SPI data.
 		uint8_t command = uint8_t(0x30 | (m_lsbfirst << 3) | (m_read_clock_ve << 2) | m_write_clock_ve);
-		uint8_t len_low = uint8_t((length - 1) & 0xff);
-		uint8_t len_high = uint8_t((length - 1) >> 8);
 
 		// execute.
 		m_device->setLow(m_cs);
 		m_device->writeByte(command);
-		m_device->writeByte(len_low);
-		m_device->writeByte(len_high);
+		m_device->writeUInt16(length - 1);
 		m_device->write(output, length);
 		m_device->writeByte(0x87);
 		m_device->setHigh(m_cs);

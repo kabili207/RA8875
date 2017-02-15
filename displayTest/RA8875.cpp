@@ -186,8 +186,12 @@ namespace hw
 {
 	RA8875::RA8875(IDevice& device, Pin cs, Pin rst)
 		: m_device(&device)
-		, m_spi(device, cs, 1000000, 0, false)
+		, m_spi(device, cs, 3000000, 0, false)
 		, m_rst(rst)
+		, m_width(0)
+		, m_height(0)
+		, m_textScale(0)
+		, m_size(_800x480)
 	{
 		m_device->setPinDirection(m_rst, Direction::Out);
 	}
@@ -382,7 +386,6 @@ namespace hw
 		writeData(RA8875_DCR_LINESQUTRI_STOP | RA8875_DCR_DRAWSQUARE);
 		writeData(RA8875_DCR_LINESQUTRI_START | RA8875_DCR_FILL | RA8875_DCR_DRAWSQUARE);
 	}
-
 
 	void RA8875::fillScreen(uint16_t color)
 	{
