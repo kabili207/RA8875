@@ -223,7 +223,7 @@ namespace hw
 		m_device->setHigh(m_rst);
 		delay(100);
 
-		uint8_t x = readReg(0);
+		uint8_t x = readRegister8(0);
 		printf("RA8875: 0x%02x\n", x);
 		if (x != 0x75) {
 			return false;
@@ -233,7 +233,7 @@ namespace hw
 		return true;
 	}
 
-	void RA8875::softReset()
+	void RA8875::softReset() const
 	{
 		writeCommand(RA8875_PWRR);
 		writeData(RA8875_PWRR_SOFTRESET);
@@ -241,23 +241,23 @@ namespace hw
 		delay(1);
 	}
 
-	void RA8875::displayOn(bool on)
+	void RA8875::displayOn(bool on) const
 	{
 		if (on)
-			writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPON);
+			setRegister8(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPON);
 		else
-			writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPOFF);
+			setRegister8(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPOFF);
 	}
 
-	void RA8875::sleep(bool sleep)
+	void RA8875::sleep(bool sleep) const
 	{
 		if (sleep)
-			writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF | RA8875_PWRR_SLEEP);
+			setRegister8(RA8875_PWRR, RA8875_PWRR_DISPOFF | RA8875_PWRR_SLEEP);
 		else
-			writeReg(RA8875_PWRR, RA8875_PWRR_DISPOFF);
+			setRegister8(RA8875_PWRR, RA8875_PWRR_DISPOFF);
 	}
 
-	void RA8875::textMode()
+	void RA8875::textMode() const
 	{
 		/* Set text mode */
 		writeCommand(RA8875_MWCR0);
@@ -272,48 +272,19 @@ namespace hw
 		writeData(temp);
 	}
 
-	void RA8875::textSetCursor(uint16_t x, uint16_t y)
+	void RA8875::textSetCursor(uint16_t x, uint16_t y) const
 	{
-		/*uint8_t data[] = { 
-			RA8875_CMDWRITE, 0x2A, 
-			RA8875_DATAWRITE, uint8_t(x & 0xFF),
-			RA8875_CMDWRITE, 0x2B,
-			RA8875_DATAWRITE, uint8_t(x >> 8),
-			RA8875_CMDWRITE, 0x2C,
-			RA8875_DATAWRITE, uint8_t(y & 0xFF),
-			RA8875_CMDWRITE, 0x2D,
-			RA8875_DATAWRITE, uint8_t(y >> 8),
-		};
-		m_spi.write(data, 16);*/
-
-		writeCommand(0x2A);
-		writeData(x & 0xFF);
-		writeCommand(0x2B);
-		writeData(x >> 8);
-
-		writeCommand(0x2C);
-		writeData(y & 0xFF);
-		writeCommand(0x2D);
-		writeData(y >> 8);
+		setRegister16(0x2A, x);
+		setRegister16(0x2C, y);
 	}
 
-	void RA8875::textColor(uint16_t foreColor, uint16_t bgColor)
+	void RA8875::textColor(uint16_t foreColor, uint16_t bgColor) const
 	{
 		/* Set Fore Color */
-		writeCommand(0x63);
-		writeData((foreColor & 0xf800) >> 11);
-		writeCommand(0x64);
-		writeData((foreColor & 0x07e0) >> 5);
-		writeCommand(0x65);
-		writeData((foreColor & 0x001f));
+		setColorRegister(0x63, foreColor);
 
 		/* Set Background Color */
-		writeCommand(0x60);
-		writeData((bgColor & 0xf800) >> 11);
-		writeCommand(0x61);
-		writeData((bgColor & 0x07e0) >> 5);
-		writeCommand(0x62);
-		writeData((bgColor & 0x001f));
+		setColorRegister(0x60, bgColor);
 
 		/* Clear transparency flag */
 		writeCommand(0x22);
@@ -322,15 +293,10 @@ namespace hw
 		writeData(temp);
 	}
 
-	void RA8875::textTransparent(uint16_t foreColor)
+	void RA8875::textTransparent(uint16_t foreColor) const
 	{
 		/* Set Fore Color */
-		writeCommand(0x63);
-		writeData((foreColor & 0xf800) >> 11);
-		writeCommand(0x64);
-		writeData((foreColor & 0x07e0) >> 5);
-		writeCommand(0x65);
-		writeData((foreColor & 0x001f));
+		setColorRegister(0x63, foreColor);
 
 		/* Set transparency flag */
 		writeCommand(0x22);
@@ -354,7 +320,7 @@ namespace hw
 		m_textScale = scale;
 	}
 
-	void RA8875::textWrite(const char* buffer, uint16_t len)
+	void RA8875::textWrite(const char* buffer, uint16_t len) const
 	{
 		if (len == 0) len = strlen(buffer);
 		writeCommand(RA8875_MRWC);
@@ -364,7 +330,7 @@ namespace hw
 		}
 	}
 
-	void RA8875::graphicsMode()
+	void RA8875::graphicsMode() const
 	{
 		writeCommand(RA8875_MWCR0);
 		uint8_t temp = readData();
@@ -372,59 +338,31 @@ namespace hw
 		writeData(temp);
 	}
 
-	void RA8875::setXY(uint16_t x, uint16_t y)
+	void RA8875::setXY(uint16_t x, uint16_t y) const
 	{
-		writeReg(RA8875_CURH0, x);
-		writeReg(RA8875_CURH1, x >> 8);
-		writeReg(RA8875_CURV0, y);
-		writeReg(RA8875_CURV1, y >> 8);
+		setRegister16(RA8875_CURH0, x);
+		setRegister16(RA8875_CURV0, y);
 	}
 
-	void RA8875::fillRect()
+	void RA8875::fillRect() const
 	{
 		writeCommand(RA8875_DCR);
 		writeData(RA8875_DCR_LINESQUTRI_STOP | RA8875_DCR_DRAWSQUARE);
 		writeData(RA8875_DCR_LINESQUTRI_START | RA8875_DCR_FILL | RA8875_DCR_DRAWSQUARE);
 	}
 
-	void RA8875::fillScreen(uint16_t color)
+	void RA8875::fillScreen(uint16_t color) const
 	{
 		rectHelper(0, 0, m_width - 1, m_height - 1, color, true);
 	}
 
-	void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
+	void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) const
 	{
-		/* Set X */
-		writeCommand(0x91);
-		writeData(x0);
-		writeCommand(0x92);
-		writeData(x0 >> 8);
-
-		/* Set Y */
-		writeCommand(0x93);
-		writeData(y0);
-		writeCommand(0x94);
-		writeData(y0 >> 8);
-
-		/* Set X1 */
-		writeCommand(0x95);
-		writeData(x1);
-		writeCommand(0x96);
-		writeData((x1) >> 8);
-
-		/* Set Y1 */
-		writeCommand(0x97);
-		writeData(y1);
-		writeCommand(0x98);
-		writeData((y1) >> 8);
-
-		/* Set Color */
-		writeCommand(0x63);
-		writeData((color & 0xf800) >> 11);
-		writeCommand(0x64);
-		writeData((color & 0x07e0) >> 5);
-		writeCommand(0x65);
-		writeData((color & 0x001f));
+		setRegister16(0x91, x0);
+		setRegister16(0x93, y0);
+		setRegister16(0x95, x1);
+		setRegister16(0x97, y1);
+		setColorRegister(0x63, color);
 
 		/* Draw! */
 		writeCommand(RA8875_DCR);
@@ -434,135 +372,133 @@ namespace hw
 		waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
 	}
 
-	void RA8875::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
+	void RA8875::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) const
 	{
 		rectHelper(x, y, x + w, y + h, color, false);
 	}
 
-	void RA8875::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
+	void RA8875::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) const
 	{
 		rectHelper(x, y, x + w, y + h, color, true);
 	}
 
-	void RA8875::drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
+	void RA8875::drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) const
 	{
 		circleHelper(x0, y0, r, color, false);
 	}
 
-	void RA8875::fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
+	void RA8875::fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) const
 	{
 		circleHelper(x0, y0, r, color, true);
 	}
 
-	void RA8875::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
+	void RA8875::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) const
 	{
 		triangleHelper(x0, y0, x1, y1, x2, y2, color, false);
 	}
 
-	void RA8875::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
+	void RA8875::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) const
 	{
 		triangleHelper(x0, y0, x1, y1, x2, y2, color, true);
 	}
 
-	void RA8875::drawEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color)
+	void RA8875::drawEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color) const
 	{
 		ellipseHelper(xCenter, yCenter, longAxis, shortAxis, color, false);
 	}
 
-	void RA8875::fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color)
+	void RA8875::fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color) const
 	{
 		ellipseHelper(xCenter, yCenter, longAxis, shortAxis, color, true);
 	}
 
-	void RA8875::drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color)
+	void RA8875::drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color) const
 	{
 		curveHelper(xCenter, yCenter, longAxis, shortAxis, curvePart, color, false);
 	}
 
-	void RA8875::fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color)
+	void RA8875::fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color) const
 	{
 		curveHelper(xCenter, yCenter, longAxis, shortAxis, curvePart, color, true);
 	}
 
-	void RA8875::GPIOX(bool on)
+	void RA8875::GPIOX(bool on) const
 	{
 		if (on)
-			writeReg(RA8875_GPIOX, 1);
+			setRegister8(RA8875_GPIOX, 1);
 		else
-			writeReg(RA8875_GPIOX, 0);
+			setRegister8(RA8875_GPIOX, 0);
 	}
 
-	void RA8875::PWM1config(bool on, uint8_t clock)
+	void RA8875::PWM1config(bool on, uint8_t clock) const
 	{
 		if (on) 
-			writeReg(RA8875_P1CR, RA8875_P1CR_ENABLE | (clock & 0xF));
+			setRegister8(RA8875_P1CR, RA8875_P1CR_ENABLE | (clock & 0xF));
 		else 
-			writeReg(RA8875_P1CR, RA8875_P1CR_DISABLE | (clock & 0xF));
+			setRegister8(RA8875_P1CR, RA8875_P1CR_DISABLE | (clock & 0xF));
 	}
 
-	void RA8875::PWM2config(bool on, uint8_t clock)
+	void RA8875::PWM2config(bool on, uint8_t clock) const
 	{
 		if (on) 
-			writeReg(RA8875_P2CR, RA8875_P2CR_ENABLE | (clock & 0xF));
+			setRegister8(RA8875_P2CR, RA8875_P2CR_ENABLE | (clock & 0xF));
 		else 
-			writeReg(RA8875_P2CR, RA8875_P2CR_DISABLE | (clock & 0xF));
+			setRegister8(RA8875_P2CR, RA8875_P2CR_DISABLE | (clock & 0xF));
 	}
 
-	void RA8875::PWM1out(uint8_t p)
+	void RA8875::PWM1out(uint8_t p) const
 	{
-		writeReg(RA8875_P1DCR, p);
+		setRegister8(RA8875_P1DCR, p);
 	}
 
-	void RA8875::PWM2out(uint8_t p)
+	void RA8875::PWM2out(uint8_t p) const
 	{
-		writeReg(RA8875_P2DCR, p);
+		setRegister8(RA8875_P2DCR, p);
 	}
 
-	void RA8875::touchEnable(bool on)
+	void RA8875::touchEnable(bool on) const
 	{
-		uint8_t   adcClk = (uint8_t)RA8875_TPCR0_ADCCLK_DIV4;
+		uint8_t   adcClk = uint8_t(RA8875_TPCR0_ADCCLK_DIV4);
 
 		if (m_size == _800x480) //match up touch size with LCD size
-			adcClk = (uint8_t)RA8875_TPCR0_ADCCLK_DIV16;
+			adcClk = uint8_t(RA8875_TPCR0_ADCCLK_DIV16);
 
 		if (on)
 		{
 			/* Enable Touch Panel (Reg 0x70) */
-			writeReg(RA8875_TPCR0, RA8875_TPCR0_ENABLE |
+			setRegister8(RA8875_TPCR0, RA8875_TPCR0_ENABLE |
 				RA8875_TPCR0_WAIT_4096CLK |
 				RA8875_TPCR0_WAKEENABLE |
 				adcClk); // 10mhz max!
 						 /* Set Auto Mode      (Reg 0x71) */
-			writeReg(RA8875_TPCR1, RA8875_TPCR1_AUTO |
+			setRegister8(RA8875_TPCR1, RA8875_TPCR1_AUTO |
 				// RA8875_TPCR1_VREFEXT |
 				RA8875_TPCR1_DEBOUNCE);
 			/* Enable TP INT */
-			writeReg(RA8875_INTC1, readReg(RA8875_INTC1) | RA8875_INTC1_TP);
+			setRegister8(RA8875_INTC1, readRegister8(RA8875_INTC1) | RA8875_INTC1_TP);
 		}
 		else
 		{
 			/* Disable TP INT */
-			writeReg(RA8875_INTC1, readReg(RA8875_INTC1) & ~RA8875_INTC1_TP);
+			setRegister8(RA8875_INTC1, readRegister8(RA8875_INTC1) & ~RA8875_INTC1_TP);
 			/* Disable Touch Panel (Reg 0x70) */
-			writeReg(RA8875_TPCR0, RA8875_TPCR0_DISABLE);
+			setRegister8(RA8875_TPCR0, RA8875_TPCR0_DISABLE);
 		}
 	}
 
-	bool RA8875::touched()
+	bool RA8875::touched() const
 	{
-		if (readReg(RA8875_INTC2) & RA8875_INTC2_TP) 
-			return true;
-		return false;
+		return (readRegister8(RA8875_INTC2) & RA8875_INTC2_TP) != 0;
 	}
 
-	bool RA8875::touchRead(uint16_t *x, uint16_t *y)
+	bool RA8875::touchRead(uint16_t *x, uint16_t *y) const
 	{
 		uint16_t tx, ty;
 		uint8_t temp;
 
-		tx = readReg(RA8875_TPXH);
-		ty = readReg(RA8875_TPYH);
-		temp = readReg(RA8875_TPXYL);
+		tx = readRegister8(RA8875_TPXH);
+		ty = readRegister8(RA8875_TPYH);
+		temp = readRegister8(RA8875_TPXYL);
 		tx <<= 2;
 		ty <<= 2;
 		tx |= temp & 0x03;        // get the bottom x bits
@@ -572,29 +508,42 @@ namespace hw
 		*y = ty;
 
 		/* Clear TP INT Status */
-		writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+		setRegister8(RA8875_INTC2, RA8875_INTC2_TP);
 		return true;
 	}
 
-	void RA8875::writeReg(uint8_t reg, uint8_t val)
+	void RA8875::setRegister8(uint8_t reg, uint8_t val) const
 	{
 		writeCommand(reg);
 		writeData(val);
 	}
 
-	uint8_t RA8875::readReg(uint8_t reg)
+	void RA8875::setRegister16(uint8_t reg, uint16_t val) const
+	{
+		setRegister8(reg+0, uint8_t(val & 0xFF));
+		setRegister8(reg+1, uint8_t(val >> 8));
+	}
+
+	void RA8875::setColorRegister(uint8_t reg, uint16_t color) const
+	{
+		setRegister8(reg+0, uint8_t((color & 0xf800) >> 11));
+		setRegister8(reg+1, uint8_t((color & 0x07e0) >> 5));
+		setRegister8(reg+2, uint8_t(color & 0x001f));
+	}
+
+	uint8_t RA8875::readRegister8(uint8_t reg) const
 	{
 		writeCommand(reg);
 		return readData();
 	}
 
-	void RA8875::writeData(uint8_t d)
+	void RA8875::writeData(uint8_t d) const
 	{
 		uint8_t data[] = { RA8875_DATAWRITE, d };
 		m_spi.write(data, 2);
 	}
 
-	uint8_t RA8875::readData()
+	uint8_t RA8875::readData() const
 	{
 		uint8_t data[] = { RA8875_DATAREAD, 0 };
 		uint8_t response[2];
@@ -602,13 +551,13 @@ namespace hw
 		return response[1];
 	}
 
-	void RA8875::writeCommand(uint8_t d)
+	void RA8875::writeCommand(uint8_t d) const
 	{
 		uint8_t data[] = { RA8875_CMDWRITE, d };
 		m_spi.write(data, 2);
 	}
 
-	uint8_t RA8875::readStatus()
+	uint8_t RA8875::readStatus() const
 	{
 		uint8_t data[] = { RA8875_CMDREAD, 0 };
 		uint8_t response[2];
@@ -616,15 +565,15 @@ namespace hw
 		return response[1];
 	}
 
-	bool RA8875::waitPoll(uint8_t r, uint8_t f)
+	bool RA8875::waitPoll(uint8_t r, uint8_t f) const
 	{
 		while (1)
 		{
-			uint8_t temp = readReg(r);
+			uint8_t temp = readRegister8(r);
 			if (!(temp & f))
 				return true;
 		}
-		return false; // MEMEFIX: yeah i know, unreached! - add timeout?
+		// MEMEFIX: yeah i know, unreached! - add timeout?
 	}
 
 	uint16_t RA8875::width() const
@@ -639,28 +588,28 @@ namespace hw
 
 	// -- Private methods below -------------------------
 
-	void RA8875::PLLinit()
+	void RA8875::PLLinit() const
 	{
 		if (m_size == _480x272)
 		{
-			writeReg(RA8875_PLLC1, RA8875_PLLC1_PLLDIV1 + 10);
+			setRegister8(RA8875_PLLC1, RA8875_PLLC1_PLLDIV1 + 10);
 			delay(1);
-			writeReg(RA8875_PLLC2, RA8875_PLLC2_DIV4);
+			setRegister8(RA8875_PLLC2, RA8875_PLLC2_DIV4);
 			delay(1);
 		}
 		else /* if (m_size == _800x480) */
 		{
-			writeReg(RA8875_PLLC1, RA8875_PLLC1_PLLDIV1 + 10);
+			setRegister8(RA8875_PLLC1, RA8875_PLLC1_PLLDIV1 + 10);
 			delay(1);
-			writeReg(RA8875_PLLC2, RA8875_PLLC2_DIV4);
+			setRegister8(RA8875_PLLC2, RA8875_PLLC2_DIV4);
 			delay(1);
 		}
 	}
 
-	void RA8875::initialize()
+	void RA8875::initialize() const
 	{
 		PLLinit();
-		writeReg(RA8875_SYSR, RA8875_SYSR_16BPP | RA8875_SYSR_MCU8);
+		setRegister8(RA8875_SYSR, RA8875_SYSR_16BPP | RA8875_SYSR_MCU8);
 
 		/* Timing values */
 		uint8_t pixclk;
@@ -696,274 +645,120 @@ namespace hw
 			vsync_pw = 2;
 		}
 
-		writeReg(RA8875_PCSR, pixclk);
+		setRegister8(RA8875_PCSR, pixclk);
 		delay(1);
 
 		/* Horizontal settings registers */
-		writeReg(RA8875_HDWR, (m_width / 8) - 1);                          // H width: (HDWR + 1) * 8 = 480
-		writeReg(RA8875_HNDFTR, RA8875_HNDFTR_DE_HIGH + hsync_finetune);
-		writeReg(RA8875_HNDR, (hsync_nondisp - hsync_finetune - 2) / 8);    // H non-display: HNDR * 8 + HNDFTR + 2 = 10
-		writeReg(RA8875_HSTR, hsync_start / 8 - 1);                         // Hsync start: (HSTR + 1)*8 
-		writeReg(RA8875_HPWR, RA8875_HPWR_LOW + (hsync_pw / 8 - 1));        // HSync pulse width = (HPWR+1) * 8
+		setRegister8(RA8875_HDWR, (m_width / 8) - 1);                          // H width: (HDWR + 1) * 8 = 480
+		setRegister8(RA8875_HNDFTR, RA8875_HNDFTR_DE_HIGH + hsync_finetune);
+		setRegister8(RA8875_HNDR, (hsync_nondisp - hsync_finetune - 2) / 8);    // H non-display: HNDR * 8 + HNDFTR + 2 = 10
+		setRegister8(RA8875_HSTR, hsync_start / 8 - 1);                         // Hsync start: (HSTR + 1)*8 
+		setRegister8(RA8875_HPWR, RA8875_HPWR_LOW + (hsync_pw / 8 - 1));        // HSync pulse width = (HPWR+1) * 8
 
 		/* Vertical settings registers */
-		writeReg(RA8875_VDHR0, (uint16_t)(m_height - 1) & 0xFF);
-		writeReg(RA8875_VDHR1, (uint16_t)(m_height - 1) >> 8);
-		writeReg(RA8875_VNDR0, vsync_nondisp - 1);                          // V non-display period = VNDR + 1
-		writeReg(RA8875_VNDR1, vsync_nondisp >> 8);
-		writeReg(RA8875_VSTR0, vsync_start - 1);                            // Vsync start position = VSTR + 1
-		writeReg(RA8875_VSTR1, vsync_start >> 8);
-		writeReg(RA8875_VPWR, RA8875_VPWR_LOW + vsync_pw - 1);            // Vsync pulse width = VPWR + 1
+		setRegister8(RA8875_VDHR0, uint16_t((m_height - 1) & 0xFF));
+		setRegister8(RA8875_VDHR1, uint16_t((m_height - 1) >> 8));
+		setRegister8(RA8875_VNDR0, vsync_nondisp - 1);                          // V non-display period = VNDR + 1
+		setRegister8(RA8875_VNDR1, vsync_nondisp >> 8);
+		setRegister8(RA8875_VSTR0, vsync_start - 1);                            // Vsync start position = VSTR + 1
+		setRegister8(RA8875_VSTR1, vsync_start >> 8);
+		setRegister8(RA8875_VPWR, RA8875_VPWR_LOW + vsync_pw - 1);            // Vsync pulse width = VPWR + 1
 
 		/* Set active window X */
-		writeReg(RA8875_HSAW0, 0);                                        // horizontal start point
-		writeReg(RA8875_HSAW1, 0);
-		writeReg(RA8875_HEAW0, (uint16_t)(m_width - 1) & 0xFF);            // horizontal end point
-		writeReg(RA8875_HEAW1, (uint16_t)(m_width - 1) >> 8);
+		setRegister8(RA8875_HSAW0, 0);                                        // horizontal start point
+		setRegister8(RA8875_HSAW1, 0);
+		setRegister8(RA8875_HEAW0, uint16_t((m_width - 1) & 0xFF));            // horizontal end point
+		setRegister8(RA8875_HEAW1, uint16_t((m_width - 1) >> 8));
 
 		/* Set active window Y */
-		writeReg(RA8875_VSAW0, 0);                                        // vertical start point
-		writeReg(RA8875_VSAW1, 0);
-		writeReg(RA8875_VEAW0, (uint16_t)(m_height - 1) & 0xFF);           // horizontal end point
-		writeReg(RA8875_VEAW1, (uint16_t)(m_height - 1) >> 8);
+		setRegister8(RA8875_VSAW0, 0);                                        // vertical start point
+		setRegister8(RA8875_VSAW1, 0);
+		setRegister8(RA8875_VEAW0, uint16_t((m_height - 1) & 0xFF));           // horizontal end point
+		setRegister8(RA8875_VEAW1, uint16_t((m_height - 1) >> 8));
 
 		/* ToDo: Setup touch panel? */
 
 		/* Clear the entire window */
-		writeReg(RA8875_MCLR, RA8875_MCLR_START | RA8875_MCLR_FULL);
+		setRegister8(RA8875_MCLR, RA8875_MCLR_START | RA8875_MCLR_FULL);
 		delay(500);
 	}
 
-	void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled)
+	void RA8875::circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled) const
 	{
-		/* Set X */
-		writeCommand(0x99);
-		writeData(x0);
-		writeCommand(0x9a);
-		writeData(x0 >> 8);
-
-		/* Set Y */
-		writeCommand(0x9b);
-		writeData(y0);
-		writeCommand(0x9c);
-		writeData(y0 >> 8);
-
-		/* Set Radius */
-		writeCommand(0x9d);
-		writeData(r);
-
-		/* Set Color */
-		writeCommand(0x63);
-		writeData((color & 0xf800) >> 11);
-		writeCommand(0x64);
-		writeData((color & 0x07e0) >> 5);
-		writeCommand(0x65);
-		writeData((color & 0x001f));
+		setRegister16(0x99, x0);
+		setRegister16(0x9b, y0);
+		setRegister8(0x9d, r);    // TODO: lookup spec, see if radius is 16-bit over into 0xde register.
+		setColorRegister(0x64, color);
 
 		/* Draw! */
 		writeCommand(RA8875_DCR);
-		if (filled)
-		{
-			writeData(RA8875_DCR_CIRCLE_START | RA8875_DCR_FILL);
-		}
-		else
-		{
-			writeData(RA8875_DCR_CIRCLE_START | RA8875_DCR_NOFILL);
-		}
+		writeData(RA8875_DCR_CIRCLE_START | (filled ? RA8875_DCR_FILL : RA8875_DCR_NOFILL));
 
 		/* Wait for the command to finish */
 		waitPoll(RA8875_DCR, RA8875_DCR_CIRCLE_STATUS);
 	}
 
-	void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled)
+	void RA8875::rectHelper(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool filled) const
 	{
-		/* Set X */
-		writeCommand(0x91);
-		writeData(x);
-		writeCommand(0x92);
-		writeData(x >> 8);
-
-		/* Set Y */
-		writeCommand(0x93);
-		writeData(y);
-		writeCommand(0x94);
-		writeData(y >> 8);
-
-		/* Set X1 */
-		writeCommand(0x95);
-		writeData(w);
-		writeCommand(0x96);
-		writeData((w) >> 8);
-
-		/* Set Y1 */
-		writeCommand(0x97);
-		writeData(h);
-		writeCommand(0x98);
-		writeData((h) >> 8);
-
-		/* Set Color */
-		writeCommand(0x63);
-		writeData((color & 0xf800) >> 11);
-		writeCommand(0x64);
-		writeData((color & 0x07e0) >> 5);
-		writeCommand(0x65);
-		writeData((color & 0x001f));
+		setRegister16(0x91, x);
+		setRegister16(0x93, y);
+		setRegister16(0x95, w);
+		setRegister16(0x97, h);
+		setColorRegister(0x63, color);
 
 		/* Draw! */
 		writeCommand(RA8875_DCR);
-		if (filled)
-		{
-			writeData(0xB0);
-		}
-		else
-		{
-			writeData(0x90);
-		}
+		writeData(filled ? 0xB0 : 0x90);
 
 		/* Wait for the command to finish */
 		waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
 	}
 
-	void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled)
+	void RA8875::triangleHelper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, bool filled) const
 	{
-		/* Set Point 0 */
-		writeCommand(0x91);
-		writeData(x0);
-		writeCommand(0x92);
-		writeData(x0 >> 8);
-		writeCommand(0x93);
-		writeData(y0);
-		writeCommand(0x94);
-		writeData(y0 >> 8);
-
-		/* Set Point 1 */
-		writeCommand(0x95);
-		writeData(x1);
-		writeCommand(0x96);
-		writeData(x1 >> 8);
-		writeCommand(0x97);
-		writeData(y1);
-		writeCommand(0x98);
-		writeData(y1 >> 8);
-
-		/* Set Point 2 */
-		writeCommand(0xA9);
-		writeData(x2);
-		writeCommand(0xAA);
-		writeData(x2 >> 8);
-		writeCommand(0xAB);
-		writeData(y2);
-		writeCommand(0xAC);
-		writeData(y2 >> 8);
-
-		/* Set Color */
-		writeCommand(0x63);
-		writeData((color & 0xf800) >> 11);
-		writeCommand(0x64);
-		writeData((color & 0x07e0) >> 5);
-		writeCommand(0x65);
-		writeData((color & 0x001f));
+		setRegister16(0x91, x0);
+		setRegister16(0x93, y0);
+		setRegister16(0x95, x1);
+		setRegister16(0x97, y1);
+		setRegister16(0xA9, x2);
+		setRegister16(0xAB, y2);
+		setColorRegister(0x63, color);
 
 		/* Draw! */
 		writeCommand(RA8875_DCR);
-		if (filled)
-		{
-			writeData(0xA1);
-		}
-		else
-		{
-			writeData(0x81);
-		}
+		writeData(filled ? 0xA1 : 0x81);
 
 		/* Wait for the command to finish */
 		waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
 	}
 
-	void RA8875::ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled)
+	void RA8875::ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled) const
 	{
-		/* Set Center Point */
-		writeCommand(0xA5);
-		writeData(xCenter);
-		writeCommand(0xA6);
-		writeData(xCenter >> 8);
-		writeCommand(0xA7);
-		writeData(yCenter);
-		writeCommand(0xA8);
-		writeData(yCenter >> 8);
-
-		/* Set Long and Short Axis */
-		writeCommand(0xA1);
-		writeData(longAxis);
-		writeCommand(0xA2);
-		writeData(longAxis >> 8);
-		writeCommand(0xA3);
-		writeData(shortAxis);
-		writeCommand(0xA4);
-		writeData(shortAxis >> 8);
-
-		/* Set Color */
-		writeCommand(0x63);
-		writeData((color & 0xf800) >> 11);
-		writeCommand(0x64);
-		writeData((color & 0x07e0) >> 5);
-		writeCommand(0x65);
-		writeData((color & 0x001f));
+		setRegister16(0xA5, xCenter);
+		setRegister16(0xA7, yCenter);
+		setRegister16(0xA1, longAxis);
+		setRegister16(0xA3, shortAxis);
+		setColorRegister(0x63, color);
 
 		/* Draw! */
 		writeCommand(0xA0);
-		if (filled)
-		{
-			writeData(0xC0);
-		}
-		else
-		{
-			writeData(0x80);
-		}
+		writeData(filled ? 0xC0 : 0x80);
 
 		/* Wait for the command to finish */
 		waitPoll(RA8875_ELLIPSE, RA8875_ELLIPSE_STATUS);
 	}
 
-	void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled)
+	void RA8875::curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled) const
 	{
-		/* Set Center Point */
-		writeCommand(0xA5);
-		writeData(xCenter);
-		writeCommand(0xA6);
-		writeData(xCenter >> 8);
-		writeCommand(0xA7);
-		writeData(yCenter);
-		writeCommand(0xA8);
-		writeData(yCenter >> 8);
-
-		/* Set Long and Short Axis */
-		writeCommand(0xA1);
-		writeData(longAxis);
-		writeCommand(0xA2);
-		writeData(longAxis >> 8);
-		writeCommand(0xA3);
-		writeData(shortAxis);
-		writeCommand(0xA4);
-		writeData(shortAxis >> 8);
-
-		/* Set Color */
-		writeCommand(0x63);
-		writeData((color & 0xf800) >> 11);
-		writeCommand(0x64);
-		writeData((color & 0x07e0) >> 5);
-		writeCommand(0x65);
-		writeData((color & 0x001f));
+		setRegister16(0xA5, xCenter);
+		setRegister16(0xA7, yCenter);
+		setRegister16(0xA1, longAxis);
+		setRegister16(0xA3, shortAxis);
+		setColorRegister(0x63, color);
 
 		/* Draw! */
 		writeCommand(0xA0);
-		if (filled)
-		{
-			writeData(0xD0 | (curvePart & 0x03));
-		}
-		else
-		{
-			writeData(0x90 | (curvePart & 0x03));
-		}
+		writeData((filled ? 0xD0 : 0x90) | (curvePart & 0x03));
 
 		/* Wait for the command to finish */
 		waitPoll(RA8875_ELLIPSE, RA8875_ELLIPSE_STATUS);

@@ -5,6 +5,7 @@
 #include <chrono>
 #include <thread>
 #include <iso646.h>
+#include <cassert>
 
 namespace hw
 {
@@ -16,25 +17,26 @@ namespace hw
 		, m_clock_base()
 		, m_lsbfirst(0)
 	{
+		// D0=clock(output), D1=MOSI(output), D1=MISO(input)
+		m_device->setPinDirection(Pin::D0, Direction::Out);
+		m_device->setPinDirection(Pin::D1, Direction::Out);
+		m_device->setPinDirection(Pin::D2, Direction::In);
+
 		// Initialize chip select pin if provided to output high.
 		m_device->setPinDirection(cs, Direction::Out);
 		m_device->setHigh(m_cs);
 
 		// Initialize clock, mode, and bit order.
-		set_clock_hz(max_speed_hz);
-		set_mode(mode);
-		set_bit_order(lsbFirst);
-	}
-
-	SPI::~SPI()
-	{
+		setClock(max_speed_hz);
+		setMode(mode);
+		setBitOrder(lsbFirst);
 	}
 
 	///
 	/// Set the speed of the SPI clock in hertz.  Note that not all speeds
 	/// are supported and a lower speed might be chosen by the hardware.
 	///
-	void SPI::set_clock_hz(int hz)
+	void SPI::setClock(int hz) const
 	{
 		m_device->setClock(hz);
 	}
@@ -45,44 +47,36 @@ namespace hw
 	/// numeric value 0, 1, 2, or 3.  See wikipedia page for details on meaning:
 	/// http://en.wikipedia.org/wiki/Serial_Peripheral_Interface_Bus
 	///
-	void SPI::set_mode(int mode)
+	void SPI::setMode(int mode)
 	{
-		// Set clock and DO as output, DI as input.
-		m_device->setPinDirection(Pin::D0, Direction::Out);
-		m_device->setPinDirection(Pin::D1, Direction::Out);
-		m_device->setPinDirection(Pin::D2, Direction::In);
-
-		if (mode == 0)
+		switch (mode)
 		{
+		case 0: 
 			// Mode 0 captures on rising clock, propagates on falling clock
 			m_write_clock_ve = 1;
 			m_read_clock_ve = 0;
-			// Clock base is low.
 			m_device->setLow(Pin::D0);
-		}
-		else if (mode == 1)
-		{
+			break;
+		case 1:
 			// Mode 1 capture of falling edge, propagate on rising clock
 			m_write_clock_ve = 0;
 			m_read_clock_ve = 1;
-			// Clock base is low.
 			m_device->setLow(Pin::D0);
-		}
-		else if (mode == 2)
-		{
+			break;
+		case 2:
 			// Mode 2 capture on rising clock, propagate on falling clock
 			m_write_clock_ve = 1;
 			m_read_clock_ve = 0;
-			// Clock base is high.
 			m_device->setHigh(Pin::D0);
-		}
-		else if (mode == 3)
-		{
+			break;
+		case 3:
 			// Mode 3 capture on falling edge, propagage on rising clock
 			m_write_clock_ve = 0;
 			m_read_clock_ve = 1;
-			// Clock base is high.
 			m_device->setHigh(Pin::D0);
+			break;
+		default:
+			assert(false);
 		}
 	}
 
@@ -92,7 +86,7 @@ namespace hw
 	/// either MSBFIRST for most - significant first, or LSBFIRST for
 	/// least - signifcant first.
 	/// 
-	void SPI::set_bit_order(bool lsbFirst)
+	void SPI::setBitOrder(bool lsbFirst)
 	{
 		m_lsbfirst = lsbFirst ? 1 : 0;
 	}
@@ -101,10 +95,10 @@ namespace hw
 	/// Half-duplex SPI write.  The specified array of bytes will be clocked
 	/// out the MOSI line.
 	/// 
-	void SPI::write(const uint8_t* data, uint16_t length)
+	void SPI::write(const uint8_t* data, uint16_t length) const
 	{
 		// Build command to read and write SPI data.
-		uint8_t command = uint8_t(0x10 | (m_lsbfirst << 3) | m_write_clock_ve);
+		auto command = uint8_t(0x10 | (m_lsbfirst << 3) | m_write_clock_ve);
 
 		// execute.
 		m_device->setLow(m_cs);
@@ -119,10 +113,10 @@ namespace hw
 	/// Half-duplex SPI read.  The specified length of bytes will be clocked
 	/// in the MISO line and returned as a bytearray object.
 	/// 
-	int SPI::read(uint8_t* data, uint16_t length)
+	int SPI::read(uint8_t* data, uint16_t length) const
 	{
 		// Build command to read and write SPI data.
-		uint8_t command = uint8_t(0x20 | (m_lsbfirst << 3) | (m_read_clock_ve << 2));
+		auto command = uint8_t(0x20 | (m_lsbfirst << 3) | (m_read_clock_ve << 2));
 
 		// execute.
 		m_device->setLow(m_cs);
@@ -139,10 +133,10 @@ namespace hw
 	/// clocked out the MOSI line, while simultaneously bytes will be read from
 	/// the MISO line.Read bytes will be returned as a bytearray object.
 	///
-	int SPI::transfer(const uint8_t* output, uint8_t* response, uint16_t length)
+	int SPI::transfer(const uint8_t* output, uint8_t* response, uint16_t length) const
 	{
 		// Build command to read and write SPI data.
-		uint8_t command = uint8_t(0x30 | (m_lsbfirst << 3) | (m_read_clock_ve << 2) | m_write_clock_ve);
+		auto command = uint8_t(0x30 | (m_lsbfirst << 3) | (m_read_clock_ve << 2) | m_write_clock_ve);
 
 		// execute.
 		m_device->setLow(m_cs);
