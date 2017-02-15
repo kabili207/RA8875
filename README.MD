@@ -20,3 +20,16 @@ The code assumes the following connections:
 * Connect (FT232H)D2  -> (RA8875)MISO
 * Connect (FT232H)D3  -> (RA8875)CS
 * Connect (FT232H)D4  -> (RA8875)RST
+
+
+## How to build the code?
+* get premake5 from here: http://premake.github.io/
+* run "premake5.exe vs2015"
+* open the generated Visual Studio project in "build/displayTest.sln"
+
+## How to setup the FT232H drivers?
+* follow these steps: https://learn.adafruit.com/adafruit-ft232h-breakout/windows-setup#libusb-driver-install
+
+
+
+
