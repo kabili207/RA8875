@@ -106,6 +106,11 @@ int main(void)
 	tft.drawCurve(50, 100, 80, 40, 2, RA8875_BLACK);
 	tft.fillCurve(50, 100, 78, 38, 2, RA8875_WHITE);
 
+	delay(1000);
+
+	tft.displayOn(false);
+	tft.softReset();
+
 	ft232h.close();
 	return 0;
 }
