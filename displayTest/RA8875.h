@@ -39,6 +39,8 @@ namespace hw
 	class RA8875
 	{
 	public:
+		enum class Register : uint8_t;
+
 		enum DisplaySize
 		{
 			_480x272,
@@ -93,16 +95,16 @@ namespace hw
 		bool    touchRead(uint16_t *x, uint16_t *y) const;
 
 		/* Low level access */
-		void     setRegister8(uint8_t reg, uint8_t val) const;
-		void     setRegister16(uint8_t reg, uint16_t val) const;
-		void     setColorRegister(uint8_t reg, uint16_t color) const;
-		uint8_t  readRegister8(uint8_t reg) const;
+		void     setRegister8(Register reg, uint8_t val) const;
+		void     setRegister16(Register reg, uint16_t val) const;
+		void     setColorRegister(Register reg, uint16_t color) const;
+		uint8_t  readRegister8(Register reg) const;
 
 		void     writeData(uint8_t d) const;
 		uint8_t  readData() const;
 		void     writeCommand(uint8_t d) const;
 		uint8_t  readStatus() const;
-		bool     waitPoll(uint8_t r, uint8_t f) const;
+		bool     waitPoll(Register reg, uint8_t f) const;
 		uint16_t width() const;
 		uint16_t height() const;
 

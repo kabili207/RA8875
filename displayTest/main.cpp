@@ -26,11 +26,13 @@ int main(void)
 		return -1;
 	}
 	
-	tft.displayOn(true);
+	//tft.displayOn(true);
 	tft.GPIOX(true);      // Enable TFT - display enable tied to GPIOX
 	tft.PWM1config(true, RA8875_PWM_CLK_DIV1024); // PWM output for backlight
 	tft.PWM1out(255);
 	tft.fillScreen(0x1111);
+
+	tft.displayOn(true);
 
 	/* Switch to text mode */
 	tft.textMode();
@@ -108,8 +110,8 @@ int main(void)
 
 	delay(1000);
 
-	tft.displayOn(false);
-	tft.softReset();
+	//tft.displayOn(false);
+	//tft.softReset();
 
 	ft232h.close();
 	return 0;
