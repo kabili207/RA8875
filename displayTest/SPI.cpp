@@ -12,10 +12,7 @@ namespace hw
 	SPI::SPI(IDevice& device, Pin cs, int max_speed_hz, int mode, bool lsbFirst)
 		: m_device(&device)
 		, m_cs(cs)
-		, m_write_clock_ve()
-		, m_read_clock_ve()
-		, m_clock_base()
-		, m_lsbfirst(0)
+		, m_flags(0)
 	{
 		// D0=clock(output), D1=MOSI(output), D1=MISO(input)
 		m_device->setPinDirection(Pin::D0, Direction::Out);
@@ -53,26 +50,22 @@ namespace hw
 		{
 		case 0: 
 			// Mode 0 captures on rising clock, propagates on falling clock
-			m_write_clock_ve = 1;
-			m_read_clock_ve = 0;
+			m_flags = (m_flags & ~0x5) | MPSSE_WRITE_NEG;
 			m_device->setLow(Pin::D0);
 			break;
 		case 1:
 			// Mode 1 capture of falling edge, propagate on rising clock
-			m_write_clock_ve = 0;
-			m_read_clock_ve = 1;
+			m_flags = (m_flags & ~0x5) | MPSSE_READ_NEG;
 			m_device->setLow(Pin::D0);
 			break;
 		case 2:
 			// Mode 2 capture on rising clock, propagate on falling clock
-			m_write_clock_ve = 1;
-			m_read_clock_ve = 0;
+			m_flags = (m_flags & ~0x5) | MPSSE_WRITE_NEG;
 			m_device->setHigh(Pin::D0);
 			break;
 		case 3:
 			// Mode 3 capture on falling edge, propagage on rising clock
-			m_write_clock_ve = 0;
-			m_read_clock_ve = 1;
+			m_flags = (m_flags & ~0x5) | MPSSE_READ_NEG;
 			m_device->setHigh(Pin::D0);
 			break;
 		default:
@@ -88,7 +81,14 @@ namespace hw
 	/// 
 	void SPI::setBitOrder(bool lsbFirst)
 	{
-		m_lsbfirst = lsbFirst ? 1 : 0;
+		if (lsbFirst)
+		{
+			m_flags |= MPSSE_LSB;
+		}
+		else
+		{
+			m_flags &= ~MPSSE_LSB;
+		}
 	}
 
 	/// 
@@ -97,12 +97,8 @@ namespace hw
 	/// 
 	void SPI::write(const uint8_t* data, uint16_t length) const
 	{
-		// Build command to read and write SPI data.
-		auto command = uint8_t(0x10 | (m_lsbfirst << 3) | m_write_clock_ve);
-
-		// execute.
 		m_device->setLow(m_cs);
-		m_device->writeByte(command);
+		m_device->writeByte(MPSSE_DO_WRITE | m_flags);
 		m_device->writeUInt16(length-1);
 		m_device->write(data, length);
 		m_device->writeByte(0x87);
@@ -115,12 +111,8 @@ namespace hw
 	/// 
 	int SPI::read(uint8_t* data, uint16_t length) const
 	{
-		// Build command to read and write SPI data.
-		auto command = uint8_t(0x20 | (m_lsbfirst << 3) | (m_read_clock_ve << 2));
-
-		// execute.
 		m_device->setLow(m_cs);
-		m_device->writeByte(command);
+		m_device->writeByte(MPSSE_DO_READ | m_flags);
 		m_device->writeUInt16(length - 1);
 		m_device->writeByte(0x87);
 		m_device->setHigh(m_cs);
@@ -135,12 +127,8 @@ namespace hw
 	///
 	int SPI::transfer(const uint8_t* output, uint8_t* response, uint16_t length) const
 	{
-		// Build command to read and write SPI data.
-		auto command = uint8_t(0x30 | (m_lsbfirst << 3) | (m_read_clock_ve << 2) | m_write_clock_ve);
-
-		// execute.
 		m_device->setLow(m_cs);
-		m_device->writeByte(command);
+		m_device->writeByte(MPSSE_DO_WRITE | MPSSE_DO_READ | m_flags);
 		m_device->writeUInt16(length - 1);
 		m_device->write(output, length);
 		m_device->writeByte(0x87);

@@ -1,4 +1,4 @@
-#include "FT232H.h"
+	#include "FT232H.h"
 #include <stdio.h>
 #include <ftdi.h>
 
@@ -54,6 +54,13 @@ namespace hw
 			return false;
 		}
 
+		ret = ftdi_set_baudrate(m_ftdi, 115200);
+		if (ret < 0)
+		{
+			fprintf(stderr, "Unable to set baudrate on ftdi device: %d (%s)\n", ret, ftdi_get_error_string(m_ftdi));
+			return false;
+		}
+
 		// Reset device.
 		ftdi_usb_reset(m_ftdi);
 
@@ -69,7 +76,7 @@ namespace hw
 		mpsse_sync();
 
 		// Initialize all GPIO as inputs.
-		writeList({ 0x80, 0, 0, 0x82, 0, 0 });
+		writeList({ SET_BITS_LOW, 0, 0, SET_BITS_HIGH, 0, 0 });
 		m_gpio_direction = 0x0000;
 		m_gpio_values = 0x0000;
 		return true;
@@ -122,21 +129,22 @@ namespace hw
 	void FT232H::setClock(int clock_hz, bool adaptive, bool three_phase)
 	{
 		// Disable clock divisor by 5 to enable faster speeds on FT232H.
-		writeByte(0x8A);
+		writeByte(DIS_DIV_5);
+
 		// Turn on / off adaptive clocking.
 		if (adaptive)
-			writeByte(0x96);
+			writeByte(EN_ADAPTIVE);
 		else
-			writeByte(0x97);
+			writeByte(DIS_ADAPTIVE);
 
 		// Turn on / off three phase clock(needed for I2C).
 		// Also adjust the frequency for three - phase clocking as specified in section 2.2.4
 		// of this document:
 		//   http://www.ftdichip.com/Support/Documents/AppNotes/AN_255_USB%20to%20I2C%20Example%20using%20the%20FT232H%20and%20FT201X%20devices.pdf
 		if (three_phase)
-			writeByte(0x8C);
+			writeByte(EN_3_PHASE);
 		else
-			writeByte(0x8D);
+			writeByte(DIS_3_PHASE);
 
 		// Compute divisor for requested clock.
 		// Use equation from section 3.8.1 of:
@@ -147,7 +155,7 @@ namespace hw
 			divisor = int(divisor*(2.0 / 3.0));
 
 		// Send command to set divisor from low and high byte values.
-		writeByte(0x86);
+		writeByte(TCK_DIVISOR);
 		writeUInt16(uint16_t(divisor));
 	}
 
@@ -189,7 +197,7 @@ namespace hw
 	uint16_t FT232H::mpsse_read_gpio()
 	{
 		// Send command to read low byte and high byte.
-		writeList({ 0x81, 0x83 });
+		writeList({ GET_BITS_LOW, GET_BITS_HIGH });
 
 		// Wait for 2 byte response.
 		uint8_t data[2];
@@ -208,7 +216,7 @@ namespace hw
 		uint8_t dir_low = m_gpio_direction & 0xff;
 		uint8_t dir_high = m_gpio_direction >> 8;
 
-		writeList({ 0x80, level_low, dir_low, 0x82, level_high, dir_high });
+		writeList({ SET_BITS_LOW, level_low, dir_low, SET_BITS_HIGH, level_high, dir_high });
 	}
 
 	void FT232H::mpsse_enable()

@@ -20,9 +20,6 @@ namespace hw
 	private:
 		IDevice*    m_device;
 		Pin         m_cs;
-		int         m_write_clock_ve;
-		int         m_read_clock_ve;
-		bool        m_clock_base;
-		int         m_lsbfirst;
+		uint8_t     m_flags;
 	};
 }

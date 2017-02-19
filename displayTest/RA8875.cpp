@@ -184,16 +184,20 @@
 
 namespace hw
 {
-	RA8875::RA8875(IDevice& device, Pin cs, Pin rst)
+	RA8875::RA8875(IDevice& device, Pin cs, Pin rst, Pin wait, Pin interrupt)
 		: m_device(&device)
 		, m_spi(device, cs, 2000000, 0, false)
 		, m_rst(rst)
+		, m_wait(wait)
+		, m_interrupt(interrupt)
 		, m_width(0)
 		, m_height(0)
 		, m_textScale(0)
 		, m_size(_800x480)
 	{
 		m_device->setPinDirection(m_rst, Direction::Out);
+		m_device->setPinDirection(m_wait, Direction::In);
+		m_device->setPinDirection(m_interrupt, Direction::In);
 	}
 
 	RA8875::~RA8875()
