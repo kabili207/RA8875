@@ -8,7 +8,7 @@ struct ftdi_context;
 
 namespace hw
 {
-	class FT232H sealed : public IDevice
+	class FT232H : public IDevice
 	{
 	public:
 		FT232H();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <stdlib.h>
 #include <initializer_list>
 
 namespace hw

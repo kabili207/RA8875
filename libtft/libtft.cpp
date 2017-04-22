@@ -21,7 +21,7 @@ void TFT_destroyTft(RA8875Handle tft) {
 
 void TFT_destroyDevice(FT232HHandle device) {
 	reinterpret_cast<hw::FT232H*>(device)->close();
-	delete device;
+	delete reinterpret_cast<hw::FT232H*>(device);
 }
 
 

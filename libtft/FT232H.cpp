@@ -5,6 +5,7 @@
 #include <chrono>
 #include <thread>
 #include <iso646.h>
+#include <math.h>
 
 namespace hw
 {

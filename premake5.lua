@@ -7,13 +7,15 @@ newoption {
 
 solution 'displayTest'
 	configurations { 'Release', 'Debug' }
-	platforms { 'x86' }
+	platforms { 'x86', 'x86_64' }
 	location ( _OPTIONS.to )
+	targetprefix ''
 
 	flags { 
 		'ExtraWarnings', 
 		'StaticRuntime', 
-		'MultiProcessorCompile' 
+		'MultiProcessorCompile' , 
+		'RelativeLinks' 
 	}
 
 	filter 'configurations:Debug'
