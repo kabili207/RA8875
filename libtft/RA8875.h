@@ -34,23 +34,24 @@
 #define RA8875_PWM_CLK_DIV16384 0x0E
 #define RA8875_PWM_CLK_DIV32768 0x0F
 
+enum TFT_Register : uint8_t;
+
+enum TFT_DisplaySize
+{
+	_480x272 = 0,
+	_800x480 = 1
+};
+
 namespace hw
 {
 	class RA8875
 	{
 	public:
-		enum class Register : uint8_t;
-
-		enum DisplaySize
-		{
-			_480x272,
-			_800x480
-		};
 
 		RA8875(IDevice& device, Pin cs = Pin::D3, Pin rst = Pin::D4, Pin wait = Pin::D5, Pin interrupt = Pin::D6);
 		~RA8875();
 
-		bool    begin(DisplaySize s);
+		bool    begin(TFT_DisplaySize s);
 		void    softReset() const;
 		void    displayOn(bool on) const;
 		void    sleep(bool sleep) const;
@@ -66,7 +67,7 @@ namespace hw
 		/* Graphics functions */
 		void    graphicsMode() const;
 		void    setXY(uint16_t x, uint16_t y) const;
-		void    fillRect() const;
+		//void    fillRect() const;
 
 		/* HW accelerated wrapper functions (override Adafruit_GFX prototypes) */
 		void    fillScreen(uint16_t color) const;
@@ -83,6 +84,8 @@ namespace hw
 		void    fillCurve(uint16_t xCenter, uint16_t yCenter, uint16_t longAxis, uint16_t shortAxis, uint8_t curvePart, uint16_t color) const;
 
 		/* Backlight */
+		void    brightness(uint8_t val);
+		void    backlight(bool on) const;
 		void    GPIOX(bool on) const;
 		void    PWM1config(bool on, uint8_t clock) const;
 		void    PWM2config(bool on, uint8_t clock) const;
@@ -95,20 +98,21 @@ namespace hw
 		bool    touchRead(uint16_t *x, uint16_t *y) const;
 
 		/* Low level access */
-		void     setRegister8(Register reg, uint8_t val) const;
-		void     setRegister16(Register reg, uint16_t val) const;
-		void     setColorRegister(Register reg, uint16_t color) const;
-		uint8_t  readRegister8(Register reg) const;
+		void     setRegister8(TFT_Register reg, uint8_t val) const;
+		void     setRegister16(TFT_Register reg, uint16_t val) const;
+		void     setColorRegister(TFT_Register reg, uint16_t color) const;
+		uint8_t  readRegister8(TFT_Register reg) const;
 
 		void     writeData(uint8_t d) const;
 		uint8_t  readData() const;
 		void     writeCommand(uint8_t d) const;
 		uint8_t  readStatus() const;
-		bool     waitPoll(Register reg, uint8_t f) const;
+		bool     waitPoll(TFT_Register reg, uint8_t f) const;
 		uint16_t width() const;
 		uint16_t height() const;
 
 	private:
+		void _setSysClock(uint8_t pll1, uint8_t pll2, uint8_t pixclk);
 		void PLLinit() const;
 		void initialize() const;
 
@@ -131,7 +135,8 @@ namespace hw
 		uint16_t    m_width;
 		uint16_t    m_height;
 		uint8_t     m_textScale;
-		DisplaySize m_size;
+		uint8_t     m_brightness;
+		TFT_DisplaySize m_size;
 	};
 }
 

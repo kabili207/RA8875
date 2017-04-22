@@ -2,10 +2,11 @@ project 'displayTest'
 	kind 'consoleapp'
 	language 'c++'
 
-	includedirs { '.', '../libusb', '../libftdi' }
+	includedirs { '.', '../libusb', '../libftdi', '../libtft' }
 	files { '*.cpp', '*.h' }
 
 	links {
 		'libusb',
-		'libftdi'
+		'libftdi',
+		'libtft'
 	}

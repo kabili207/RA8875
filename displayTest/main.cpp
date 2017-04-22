@@ -4,6 +4,9 @@
 
 #include "FT232H.h"
 #include "RA8875.h"
+
+#include "libtft.h"
+
 #include <thread>
 
 static void delay(int ms)
@@ -13,106 +16,115 @@ static void delay(int ms)
 
 int main(void)
 {
-	hw::FT232H ft232h;
-	if (!ft232h.open())
+	FT232HHandle device = TFT_createDevice();
+	if (!TFT_openDevice(device))
 	{
 		return -1;
 	}
 
-	hw::RA8875 tft(ft232h);
+	
+	//hw::RA8875 tft(ft232h);
+	RA8875Handle tft = TFT_createTft(device);
 
-	if (!tft.begin(hw::RA8875::_800x480)) {
+	if (!TFT_begin(tft, TFT_DisplaySize::_800x480)) {
 		fprintf(stderr, "RA8875 Not Found!\n");
 		return -1;
 	}
 	
-	//tft.displayOn(true);
-	tft.GPIOX(true);      // Enable TFT - display enable tied to GPIOX
-	tft.PWM1config(true, RA8875_PWM_CLK_DIV1024); // PWM output for backlight
-	tft.PWM1out(255);
-	tft.fillScreen(0x1111);
+	//TFT_displayOn(tft, true);
+	TFT_backlight(tft, true);      // Enable TFT - display enable tied to GPIOX
+	TFT_brightness(tft, 255);
+	TFT_fillScreen(tft, 0x1111);
 
-	tft.displayOn(true);
+	TFT_displayOn(tft, true);
 
 	/* Switch to text mode */
-	tft.textMode();
+	TFT_textMode(tft);
 
 	/* Set a solid for + bg color ... */
 	/* ... or a fore color plus a transparent background */
 
 	/* Set the cursor location (in pixels) */
-	tft.textSetCursor(10, 10);
+	TFT_textSetCursor(tft, 10, 10);
 
 	/* Render some text! */
 	char string[15] = "Hello, World! ";
-	tft.textTransparent(RA8875_WHITE);
-	tft.textWrite(string);
-	tft.textColor(RA8875_WHITE, RA8875_RED);
-	tft.textWrite(string);
-	tft.textTransparent(RA8875_CYAN);
-	tft.textWrite(string);
-	tft.textTransparent(RA8875_GREEN);
-	tft.textWrite(string);
-	tft.textColor(RA8875_YELLOW, RA8875_CYAN);
-	tft.textWrite(string);
-	tft.textColor(RA8875_BLACK, RA8875_MAGENTA);
-	tft.textWrite(string);
+	TFT_textTransparent(tft, RA8875_WHITE);
+	TFT_textWrite(tft, string);
+	TFT_textColor(tft, RA8875_WHITE, RA8875_RED);
+	TFT_textWrite(tft, string);
+	TFT_textTransparent(tft, RA8875_CYAN);
+	TFT_textWrite(tft, string);
+	TFT_textTransparent(tft, RA8875_GREEN);
+	TFT_textWrite(tft, string);
+	TFT_textColor(tft, RA8875_YELLOW, RA8875_CYAN);
+	TFT_textWrite(tft, string);
+	TFT_textColor(tft, RA8875_BLACK, RA8875_MAGENTA);
+	TFT_textWrite(tft, string);
 
 	/* Change the cursor location and color ... */
-	tft.textSetCursor(100, 100);
-	tft.textTransparent(RA8875_RED);
+	TFT_textSetCursor(tft, 100, 100);
+	TFT_textTransparent(tft, RA8875_RED);
 	/* If necessary, enlarge the font */
-	tft.textEnlarge(1);
+	TFT_textEnlarge(tft, 1);
 	/* ... and render some more text! */
-	tft.textWrite(string);
-	tft.textSetCursor(100, 150);
-	tft.textEnlarge(2);
-	tft.textWrite(string);
+	TFT_textWrite(tft, string);
+	TFT_textSetCursor(tft, 100, 150);
+	TFT_textEnlarge(tft, 2);
+	TFT_textWrite(tft, string);
 	delay(500);
 
 	// the other testing stuff.
-	tft.graphicsMode();
+	TFT_graphicsMode(tft);
 
-	tft.fillScreen(RA8875_RED);
+	TFT_fillScreen(tft, RA8875_RED);
 	delay(500);
-	tft.fillScreen(RA8875_YELLOW);
+	TFT_fillScreen(tft, RA8875_YELLOW);
 	delay(500);
-	tft.fillScreen(RA8875_GREEN);
+	TFT_fillScreen(tft, RA8875_GREEN);
 	delay(500);
-	tft.fillScreen(RA8875_CYAN);
+	TFT_fillScreen(tft, RA8875_CYAN);
 	delay(500);
-	tft.fillScreen(RA8875_MAGENTA);
+	TFT_fillScreen(tft, RA8875_MAGENTA);
 	delay(500);
-	tft.fillScreen(RA8875_BLACK);
+	TFT_fillScreen(tft, RA8875_BLACK);
 
 	// Try some GFX acceleration!
 	for (int i = 0; i < 50; ++i)
 	{
-		int x = rand() % tft.width();
-		int y = rand() % tft.height();
-		tft.fillCircle(x, y, 50, rand() & 0xffff);
-		tft.drawCircle(x, y, 50, RA8875_BLACK);
+		int x = rand() % TFT_width(tft);
+		int y = rand() % TFT_height(tft);
+		TFT_fillCircle(tft, x, y, 50, rand() & 0xffff);
+		TFT_drawCircle(tft, x, y, 50, RA8875_BLACK);
 	}
 
-	tft.fillRect(11, 11, 398, 198, RA8875_BLUE);
-	tft.drawRect(10, 10, 400, 200, RA8875_GREEN);
-	//tft.fillRoundRect(200, 10, 200, 100, 10, RA8875_RED);
-	//tft.drawPixel(10, 10, RA8875_BLACK);
-	//tft.drawPixel(11, 11, RA8875_BLACK);
-	tft.drawLine(10, 10, 200, 100, RA8875_RED);
-	tft.drawTriangle(200, 15, 250, 100, 150, 125, RA8875_BLACK);
-	tft.fillTriangle(200, 16, 249, 99, 151, 124, RA8875_YELLOW);
-	tft.drawEllipse(300, 100, 100, 40, RA8875_BLACK);
-	tft.fillEllipse(300, 100, 98, 38, RA8875_GREEN);
+	TFT_fillRect(tft, 11, 11, 398, 198, RA8875_BLUE);
+	TFT_drawRect(tft, 10, 10, 400, 200, RA8875_GREEN);
+	//TFT_fillRoundRect(tft, 200, 10, 200, 100, 10, RA8875_RED);
+	//TFT_drawPixel(tft, 10, 10, RA8875_BLACK);
+	//TFT_drawPixel(tft, 11, 11, RA8875_BLACK);
+	TFT_drawLine(tft, 10, 10, 200, 100, RA8875_RED);
+	TFT_drawTriangle(tft, 200, 15, 250, 100, 150, 125, RA8875_BLACK);
+	TFT_fillTriangle(tft, 200, 16, 249, 99, 151, 124, RA8875_YELLOW);
+	TFT_drawEllipse(tft, 300, 100, 100, 40, RA8875_BLACK);
+	TFT_fillEllipse(tft, 300, 100, 98, 38, RA8875_GREEN);
 	// Argument 5 (curvePart) is a 2-bit value to control each corner (select 0, 1, 2, or 3)
-	tft.drawCurve(50, 100, 80, 40, 2, RA8875_BLACK);
-	tft.fillCurve(50, 100, 78, 38, 2, RA8875_WHITE);
+	TFT_drawCurve(tft, 50, 100, 80, 40, 2, RA8875_BLACK);
+	TFT_fillCurve(tft, 50, 100, 78, 38, 2, RA8875_WHITE);
 
 	delay(1000);
 
-	//tft.displayOn(false);
-	//tft.softReset();
+	TFT_displayOn(tft, false);
+	TFT_backlight(tft, false);
 
-	ft232h.close();
+	TFT_backlight(tft, true);
+	TFT_displayOn(tft, true);
+
+	//TFT_sleep(tft, true);
+	//TFT_sleep(tft, false);
+	//TFT_softReset(tft);
+	
+	TFT_destroyDevice(device);
+
 	return 0;
 }

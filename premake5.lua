@@ -7,7 +7,7 @@ newoption {
 
 solution 'displayTest'
 	configurations { 'Release', 'Debug' }
-	platforms { 'x86_64' }
+	platforms { 'x86' }
 	location ( _OPTIONS.to )
 
 	flags { 
@@ -33,5 +33,6 @@ solution 'displayTest'
 
     include 'libusb'
     include 'libftdi'
+    include 'libtft'
     include 'displayTest'
 
