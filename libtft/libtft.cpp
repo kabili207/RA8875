@@ -76,6 +76,14 @@ void TFT_setXY(RA8875Handle tft, uint16_t x, uint16_t y) {
 	reinterpret_cast<hw::RA8875*>(tft)->setXY(x, y);
 }
 
+void TFT_drawPixel(RA8875Handle tft, int16_t x, int16_t y, uint16_t color) {
+	reinterpret_cast<hw::RA8875*>(tft)->drawPixel(x, y, color);
+}
+
+void TFT_drawPixels(RA8875Handle tft, uint16_t p[], uint16_t count, int16_t x, int16_t y) {
+	reinterpret_cast<hw::RA8875*>(tft)->drawPixels(p, count, x, y);
+}
+
 //void TFT_fillRect() {
 //	reinterpret_cast<hw::RA8875*>(tft)->fillRect();
 //}

@@ -538,6 +538,37 @@ namespace hw
 		rectHelper(0, 0, m_width - 1, m_height - 1, color, true);
 	}
 
+	void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color) const
+	{
+		graphicsMode();
+		setXY(x,y);
+		writeCommand(RA8875_MRWC);
+		uint8_t data[] = { RA8875_DATAWRITE, uint8_t(color >> 8), uint8_t(color & 0xFF) };
+		m_spi.write(data, 3);
+	}
+	
+	void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y) const
+	{
+		uint16_t temp = 0;
+		uint16_t i;
+		graphicsMode();
+		setXY(x,y);
+		writeCommand(RA8875_MRWC);
+
+		uint8_t data[(count * 2) + 1];
+		
+		data[0] = RA8875_DATAWRITE;
+		
+		for (i=0;i<count;i++){
+			temp = p[i];
+			data[(i * 2) + 1] = uint8_t(temp >> 8);
+			data[(i * 2) + 2] = uint8_t(temp & 0xFF);
+		}
+		
+		m_spi.write(data, (count * 2) + 1);
+	}
+	
+	
 	void RA8875::drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color) const
 	{
 		setRegister16(TFT_Register::DLHSR0, x0);
@@ -732,12 +763,18 @@ namespace hw
 		writeCommand(uint8_t(reg));
 		return readData();
 	}
-
+	
 	void RA8875::writeData(uint8_t d) const
 	{
 		uint8_t data[] = { RA8875_DATAWRITE, d };
 		m_spi.write(data, 2);
 	}
+
+	//void RA8875::writeDataArray(uint8_t d[]) const
+	//{
+	//	uint8_t data[] = { RA8875_DATAWRITE };
+	//	m_spi.write(data, 1);
+	//}
 
 	uint8_t RA8875::readData() const
 	{

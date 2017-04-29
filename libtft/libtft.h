@@ -56,6 +56,8 @@ extern "C"
 
 	/* HW accelerated wrapper functions (override Adafruit_GFX prototypes) */
 	EXPORT void    TFT_fillScreen(RA8875Handle tft, uint16_t color);
+	EXPORT void    TFT_drawPixel(RA8875Handle tft, int16_t x, int16_t y, uint16_t color);
+	EXPORT void    TFT_drawPixels(RA8875Handle tft, uint16_t p[], uint16_t count, int16_t x, int16_t y);
 	EXPORT void    TFT_drawLine(RA8875Handle tft, uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color);
 	EXPORT void    TFT_drawRect(RA8875Handle tft, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 	EXPORT void    TFT_fillRect(RA8875Handle tft, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);

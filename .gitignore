@@ -9,5 +9,6 @@
 /.vs/
 /build/
 
-
+# Ignore platform specifc config.h
+libusb/config.h
 
