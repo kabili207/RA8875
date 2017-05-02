@@ -4,6 +4,21 @@
 //
 #include "RA8875.h"
 #include <thread>
+#include <string.h>
+
+#include "Calibri20.c"
+#include "Calibri24.c"
+#include "Calibri30.c"
+#include "Consolas20.c"
+#include "Consolas24.c"
+#include "ComicNeue20.c"
+#include "ComicNeue24.c"
+
+#define _RA8875_TXTRNDOPTIMIZER
+#define bitRead(value, bit) (((value) >> (bit)) & 0x01)
+#define bitSet(value, bit) ((value) |= (1UL << (bit)))
+#define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
+#define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
 
 // Command/Data pins for SPI
 #define RA8875_DATAWRITE        0x00
@@ -367,8 +382,14 @@ namespace hw
 		, m_interrupt(interrupt)
 		, m_width(0)
 		, m_height(0)
-		, m_textScale(0)
 		, m_brightness(255)
+		, m_cursorX(0)
+		, m_cursorY(0)
+		, m_scaleX(1)
+		, m_scaleY(1)
+		, m_scaling(false)
+		, m_renderFonts(false)
+		, m_FNTinterline(0)
 		, m_size(_800x480)
 	{
 		m_device->setPinDirection(m_rst, Direction::Out);
@@ -409,6 +430,13 @@ namespace hw
 			return false;
 		}
 
+		m_activeWindowXL = 0;
+		m_activeWindowXR = m_width -1;
+		m_activeWindowYT = 0;
+		m_activeWindowYB = m_height -1;
+		
+		_setFNTdimensions(0);
+		
 		initialize();
 		return true;
 	}
@@ -441,6 +469,52 @@ namespace hw
 		}
 	}
 
+	void RA8875::setActiveWindow(void)
+	{
+		m_activeWindowXL = 0;
+		m_activeWindowXR = m_width;
+		m_activeWindowYT = 0;
+		m_activeWindowYB = m_height;
+		_updateActiveWindow(true);
+	}
+
+	void RA8875::setActiveWindow(uint16_t XL, uint16_t XR, uint16_t YT, uint16_t YB)
+	{		
+		if (XR >= m_width) XR = m_width;
+		if (YB >= m_height) YB = m_height;
+		
+		m_activeWindowXL = XL;
+		m_activeWindowXR = XR;
+		m_activeWindowYT = YT;
+		m_activeWindowYB = YB;
+		_updateActiveWindow(false);
+	}
+	
+	void RA8875::getActiveWindow(uint16_t &XL, uint16_t &XR, uint16_t &YT, uint16_t &YB)//0.69b24
+	{
+		XL = m_activeWindowXL;
+		XR = m_activeWindowXR;
+		YT = m_activeWindowYT;
+		YB = m_activeWindowYB;
+	}
+	
+	void RA8875::_updateActiveWindow(bool full) const
+	{
+		if (full){
+			setRegister16(TFT_Register::HSAW0, 0);
+			setRegister16(TFT_Register::HEAW0, m_width - 1);
+			
+			setRegister16(TFT_Register::VSAW0, 0);
+			setRegister16(TFT_Register::VEAW0, m_height - 1);
+		} else {
+			setRegister16(TFT_Register::HSAW0, m_activeWindowXL);
+			setRegister16(TFT_Register::HEAW0, m_activeWindowXR);
+
+			setRegister16(TFT_Register::VSAW0, m_activeWindowYT);
+			setRegister16(TFT_Register::VEAW0, m_activeWindowYB);
+		}
+	}
+	
 	void RA8875::textMode() const
 	{
 		/* Set text mode */
@@ -456,14 +530,20 @@ namespace hw
 		writeData(temp);
 	}
 
-	void RA8875::textSetCursor(uint16_t x, uint16_t y) const
+	void RA8875::textSetCursor(uint16_t x, uint16_t y)
 	{
+		m_cursorX = x;
+		m_cursorY = y;
 		setRegister16(TFT_Register::F_CURXL, x);
 		setRegister16(TFT_Register::F_CURYL, y);
+		if(m_renderFonts) _textPosition(x,y,false);
 	}
 
-	void RA8875::textColor(uint16_t foreColor, uint16_t bgColor) const
+	void RA8875::textColor(uint16_t foreColor, uint16_t bgColor)
 	{
+		m_foreColor = foreColor;
+		m_backColor = bgColor;
+		
 		setColorRegister(TFT_Register::FGCR0, foreColor);
 		setColorRegister(TFT_Register::BGCR0, bgColor);
 
@@ -473,7 +553,7 @@ namespace hw
 		writeData(temp);
 	}
 
-	void RA8875::textTransparent(uint16_t foreColor) const
+	void RA8875::textTransparent(uint16_t foreColor)
 	{
 		/* Set Fore Color */
 		setColorRegister(TFT_Register::FGCR0, foreColor);
@@ -486,30 +566,374 @@ namespace hw
 
 	void RA8875::textEnlarge(uint8_t scale)
 	{
-		if (scale > 3) scale = 3;
+		setFontScale(scale, scale);
+		//if (scale > 3) scale = 3;
 
-		/* Set font size flags */
-		uint8_t temp = readRegister8(TFT_Register::FNCR1);
-		temp &= ~(0xF); // Clears bits 0..3
-		temp |= scale << 2;
-		temp |= scale;
-		writeData(temp);
+		///* Set font size flags */
+		//uint8_t temp = readRegister8(TFT_Register::FNCR1);
+		//temp &= ~(0xF); // Clears bits 0..3
+		//temp |= scale << 2;
+		//temp |= scale;
+		//writeData(temp);
 
-		m_textScale = scale;
+		//m_textScale = scale;
 	}
 
-	void RA8875::textWrite(const char* buffer) const
+	void RA8875::setFontScale(uint8_t xscale, uint8_t yscale)
+	{
+		m_scaling = false;
+		if (!m_renderFonts){
+			xscale = xscale % 4; //limit to the range 0-3
+			yscale = yscale % 4; //limit to the range 0-3
+			uint8_t _FNCR1_Reg = readRegister8(TFT_Register::FNCR1);
+			_FNCR1_Reg &= ~(0xF); // clear bits from 0 to 3
+			_FNCR1_Reg |= xscale << 2;
+			_FNCR1_Reg |= yscale;
+			writeData(_FNCR1_Reg);
+			//_writeRegister(RA8875_FNCR1,_FNCR1_Reg);
+		}
+		m_scaleX = xscale + 1;
+		m_scaleY = yscale + 1;
+		if (m_scaleX > 1 || m_scaleY > 1)
+			m_scaling = true;
+	}
+	
+	void RA8875::textWrite(const char* buffer)
 	{
 		if (buffer != nullptr)
 		{
-			writeCommand(RA8875_MRWC);
-			while (*buffer != 0)
-			{
-				writeData(*buffer++);
+			_textWrite(buffer, 0);
+			//writeCommand(RA8875_MRWC);
+			//while (*buffer != 0)
+			//{
+			//	writeData(*buffer++);
+			//}
+		}
+	}
+	
+	void RA8875::setInternalFont()
+	{
+		textMode();
+		m_renderFonts = false;
+		_setFNTdimensions(0);
+		m_spaceCharWidth = m_FNTwidth;
+		setFontScale(1, 1);
+	}
+	
+	void RA8875::_setFNTdimensions(uint8_t index)
+	{
+		m_FNTwidth       = fontDimPar[index][0];
+		m_FNTheight      = fontDimPar[index][1];
+		m_FNTbaselineLow = fontDimPar[index][2];
+		m_FNTbaselineTop = fontDimPar[index][3];
+	}
+	
+	void RA8875::_textPosition(int16_t x, int16_t y,bool update)
+	{
+		setRegister8(TFT_Register::F_CURXL,(x & 0xFF));
+		setRegister8(TFT_Register::F_CURXH,(x >> 8));
+		setRegister8(TFT_Register::F_CURYL,(y & 0xFF));
+		setRegister8(TFT_Register::F_CURYH,(y >> 8));
+		
+		if (update){ m_cursorX = x; m_cursorY = y;}
+	}
+	
+	void RA8875::setFont(TFT_Font font)
+	{
+		switch(font)
+		{
+			case TFT_Font::Internal:
+				setInternalFont();
+				break;
+			case TFT_Font::Calibri20:
+				setUserFont(&calibri_20);
+				break;
+			case TFT_Font::Calibri24:
+				setUserFont(&calibri_24);
+				break;
+			case TFT_Font::Calibri30:
+				setUserFont(&calibri_30);
+				break;
+			case TFT_Font::Consolas20:
+				setUserFont(&consolas_20);
+				break;
+			case TFT_Font::Consolas24:
+				setUserFont(&consolas_24);
+				break;
+			case TFT_Font::ComicNeue20:
+				setUserFont(&comic_neue_20);
+				break;
+			case TFT_Font::ComicNeue24:
+				setUserFont(&comic_neue_24);
+				break;
+		}
+	}
+	
+	void RA8875::setUserFont(const tFont *font) 
+	{
+		m_currentFont = font;
+		m_FNTheight = 		m_currentFont->font_height;
+		m_FNTwidth = 		m_currentFont->font_width;//if 0 it's variable width font
+		m_FNTcompression = 	m_currentFont->rle;
+		//get all needed infos
+		if (m_FNTwidth > 0){
+			m_spaceCharWidth = m_FNTwidth;
+		} else {
+			//_FNTwidth will be 0 to inform other functions that this it's a variable w font
+			// We just get the space width now...
+			int temp = _getCharCode(0x20);
+			if (temp > -1){
+				m_spaceCharWidth = (m_currentFont->chars[temp].image->image_width);
+			} else {
+				//font malformed, doesn't have needed space parameter
+				//will return to system font
+				setInternalFont();
+				return;
+			}
+		}
+		m_scaleX = 1;
+		m_scaleY = 1;
+		//setFontScale(0);
+		m_renderFonts = true;//render ON
+	}
+
+	void RA8875::_textWrite(const char* buffer, uint16_t len)
+	{
+		uint16_t i;
+		if (len == 0) len = strlen(buffer);//try get the info from the buffer
+		if (len == 0) return;//better stop here, the string it's really empty!
+		bool renderOn = m_renderFonts;//detect if render fonts active
+		
+		uint8_t loVOffset = 0;
+		uint8_t hiVOffset = 0;
+		uint8_t interlineOffset = 0;
+		uint16_t fcolor = m_foreColor;
+		uint16_t bcolor = m_backColor;
+		uint16_t strngWidth = 0;
+		uint16_t strngHeight = 0;
+		
+		if (!renderOn){
+			loVOffset = m_FNTbaselineLow * m_scaleY;//calculate lower baseline
+			hiVOffset = m_FNTbaselineTop * m_scaleY;//calculate topline
+		}
+		
+		//_absoluteCenter or _relativeCenter cases...................
+		//plus calculate the real width & height of the entire text in render mode (not trasparent)
+		if (renderOn){
+			strngWidth = _STRlen_helper(buffer,len) * m_scaleX;//this calculates the width of the entire text
+			strngHeight = (m_FNTheight * m_scaleY) - (loVOffset + hiVOffset);//the REAL heigh
+
+			//if ((_absoluteCenter || _relativeCenter) &&  strngWidth > 0){//Avoid operations for strngWidth = 0
+			if (strngWidth > 0){//Avoid operations for strngWidth = 0
+				_textPosition(m_cursorX,m_cursorY,false);
+			}
+		}//_absoluteCenter,_relativeCenter,(renderOn && !_backTransparent)
+	//-----------------------------------------------------------------------------------------------
+		if (!renderOn) textMode();//   go to text
+		if (renderOn)  graphicsMode();//  go to graphic
+		
+		if (renderOn && strngWidth > 0)
+			fillRect(m_cursorX,m_cursorY,strngWidth,strngHeight,m_backColor);//bColor
+		
+		//Loop trough every char and write them one by one...
+		for (i=0;i<len;i++){
+			if (!renderOn){
+				_charWrite(buffer[i],interlineOffset);					// internal,ROM fonts
+			} else {
+				_charWriteR(buffer[i],interlineOffset,fcolor,bcolor);   // user fonts
+			}
+		}//end loop
+	}
+
+	void RA8875::_charWriteR(const char c,uint8_t offset,uint16_t fcolor,uint16_t bcolor)
+	{
+		if (c == 13){//------------------------------- CARRIAGE ----------------------------------
+			//ignore
+		} else if (c == 10){//------------------------- NEW LINE ---------------------------------
+			m_cursorX = 0;
+			m_cursorY += (m_FNTheight * m_scaleY) + m_FNTinterline + offset;
+			_textPosition(m_cursorX,m_cursorY,false);
+		} else if (c == 32){//--------------------------- SPACE ---------------------------------
+			fillRect(m_cursorX,m_cursorY,(m_spaceCharWidth * m_scaleX),(m_FNTheight * m_scaleY),bcolor);//bColor
+			m_cursorX += (m_spaceCharWidth * m_scaleX) + m_FNTspacing;
+		} else {//-------------------------------------- CHAR ------------------------------------
+			int charIndex = _getCharCode(c);//get char code
+			if (charIndex > -1){//valid?
+				int charW = 0;
+				//get charW and glyph
+				charW = m_currentFont->chars[charIndex].image->image_width;
+				
+				if (m_cursorX + charW * m_scaleX >= m_width) return;
+				
+				//-------------------------Actual single char drawing here -----------------------------------
+				if (!m_FNTcompression){
+					_drawChar_unc(m_cursorX,m_cursorY,charW,charIndex,fcolor);
+				} else {
+					//TODO
+					//RLE compressed fonts
+				}
+
+				//add charW to total -----------------------------------------------------
+				m_cursorX += (charW * m_scaleX) + m_FNTspacing;
+				
+
+			}//end valid
+		}//end char
+	}
+
+	/**************************************************************************/
+	/*!	PRIVATE
+			Write a single char, only INT and FONT ROM char (internal RA9975 render)
+			NOTE: It identify correctly println and /n & /r
+	*/
+	/**************************************************************************/
+	void RA8875::_charWrite(const char c,uint8_t offset)
+	{
+		bool dtacmd = false;
+		if (c == 13){//'\r'
+			//Ignore carriage-return
+		} else if (c == 10){//'\n'
+			m_cursorX = 0;
+			m_cursorY += (m_FNTheight + (m_FNTheight * (m_scaleY - 1))) + m_FNTinterline + offset;
+			
+			_textPosition(m_cursorX,m_cursorY,false);
+			dtacmd = false;
+		} else {
+			if (!dtacmd){
+				dtacmd = true;
+				
+				textMode();//we are in graph mode?
+				writeCommand(RA8875_MRWC);
+			}
+			writeData(c);
+			waitBusy(0x80);
+			//update cursor
+			m_cursorX += m_FNTwidth;
+		}
+	}
+	
+	int RA8875::_getCharCode(uint8_t ch)
+	{
+		int i;
+		for (i=0;i<m_currentFont->length;i++){//search for char code
+			if (m_currentFont->chars[i].char_code == ch) return i;
+		}//i
+		return -1;
+	}
+	
+	int16_t RA8875::_STRlen_helper(const char* buffer,uint16_t len)
+	{
+		if (!m_renderFonts){		//_renderFont not active
+			return (len * m_FNTwidth);
+		} else {									//_renderFont active
+			int charIndex = -1;
+			uint16_t i;
+			if (len == 0) len = strlen(buffer);		//try to get data from string
+			if (len == 0) return 0;					//better stop here
+			if (m_FNTwidth > 0){						// fixed width font
+				return ((len * m_spaceCharWidth));
+			} else {								// variable width, need to loop trough entire string!
+				uint16_t totW = 0;
+				for (i = 0;i < len;i++){			//loop trough buffer
+					if (buffer[i] == 32){			//a space
+						totW += m_spaceCharWidth;
+					} else if (buffer[i] != 13 && buffer[i] != 10 && buffer[i] != 32){//avoid special char
+						charIndex = _getCharCode(buffer[i]);
+						if (charIndex > -1) {		//found!
+							totW += (m_currentFont->chars[charIndex].image->image_width);
+						}
+					}//inside permitted chars
+				}//buffer loop
+				return totW;						//return data
+			}//end variable w font
+		}
+	}
+	
+	/**************************************************************************/
+	/*!	PRIVATE
+			Here's the char render engine for uncompressed fonts, it actually render a single char.
+			It's actually 2 functions, this one take care of every glyph line
+			and perform some optimization second one paint concurrent pixels in chunks.
+			To show how optimizations works try uncomment RA8875_VISPIXDEBUG in settings.
+			Please do not steal this part of code!
+	*/
+	/**************************************************************************/
+	void RA8875::_drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcolor)
+	{
+		//start by getting some glyph data...
+		const uint8_t * charGlyp = m_currentFont->chars[index].image->data;
+		int			  totalBytes = m_currentFont->chars[index].image->image_datalen;
+		int i;
+		uint8_t temp = 0;
+		//some basic variable...
+		uint8_t currentXposition = 0;//the current position of the writing cursor in the x axis, from 0 to charW
+		uint8_t currentYposition = 1;//the current position of the writing cursor in the y axis, from 1 to _FNTheight
+		int currentByte = 0;//the current byte in reading (from 0 to totalBytes)
+		bool lineBuffer[charW];//the temporary line buffer (will be _FNTheight each char)
+		int lineChecksum = 0;//part of the optimizer
+
+		//the main loop that will read all bytes of the glyph
+		while (currentByte < totalBytes){
+			//read n byte
+			temp = charGlyp[currentByte];
+			
+			for (i=7; i>=0; i--){
+				//----------------------------------- exception
+				if (currentXposition >= charW){
+					//line buffer has been filled!
+					currentXposition = 0;//reset the line x position
+					if (lineChecksum < 1){//empty line
+					} else if (lineChecksum == charW){//full line
+						fillRect(x,y + (currentYposition * m_scaleY),charW * m_scaleX,m_scaleY,fcolor);
+					} else { //line render
+						_charLineRender(lineBuffer,charW,x,y,currentYposition,fcolor);
+					}
+					currentYposition++;//next line
+					lineChecksum = 0;//reset checksum
+				}//end exception
+				//-------------------------------------------------------
+				lineBuffer[currentXposition] = bitRead(temp,i);//continue fill line buffer
+				lineChecksum += lineBuffer[currentXposition];
+				currentXposition++;
+			}
+			currentByte++;
+		}
+	}
+
+	/**************************************************************************/
+	/*!	PRIVATE
+			Font Line render optimized routine
+			This will render ONLY a single font line by grouping chunks of same pixels
+			Version 3.0 (fixed a bug that cause xlinePos to jump of 1 pixel
+	*/
+	/**************************************************************************/
+	void RA8875::_charLineRender(bool lineBuffer[],int charW,int16_t x,int16_t y,int16_t currentYposition,uint16_t fcolor)
+	{
+		int xlinePos = 0;
+		int px;
+		uint8_t endPix = 0;
+		bool refPixel = false;
+		while (xlinePos < charW){
+			refPixel = lineBuffer[xlinePos];//xlinePos pix as reference value for next pixels
+			//detect and render concurrent pixels
+			for (px = xlinePos;px <= charW;px++){
+				if (lineBuffer[px] == lineBuffer[xlinePos] && px < charW){//grouping pixels with same val
+					endPix++;
+				} else {
+					if (refPixel){
+						fillRect(x,y + (currentYposition * m_scaleY),endPix * m_scaleX,m_scaleY,fcolor);
+					}
+					//reset and update some vals
+					xlinePos += endPix;
+					x += endPix * m_scaleX;
+					endPix = 0;
+					break;//exit cycle for...
+				}
 			}
 		}
 	}
 
+	
 	void RA8875::graphicsMode() const
 	{
 		writeCommand(RA8875_MWCR0);
@@ -583,12 +1007,22 @@ namespace hw
 
 	void RA8875::drawRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) const
 	{
-		rectHelper(x, y, x + w, y + h, color, false);
+		if (w < 1 || h < 1) return;//it cannot be!
+		if (w < 2 && h < 2){ //render as pixel
+			drawPixel(x,y,color);
+		} else {			 //render as rect
+			rectHelper(x,y,(x+w)-1,(y+h)-1,color,false);//thanks the experimentalist
+		}
 	}
 
 	void RA8875::fillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) const
 	{
-		rectHelper(x, y, x + w, y + h, color, true);
+		if (w < 1 || h < 1) return;//it cannot be!
+		if (w < 2 && h < 2){ //render as pixel
+			drawPixel(x,y,color);
+		} else {			 //render as rect
+			rectHelper(x,y,(x+w)-1,(y+h)-1,color,true);//thanks the experimentalist
+		}
 	}
 
 	void RA8875::drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) const
@@ -809,6 +1243,17 @@ namespace hw
 		// MEMEFIX: yeah i know, unreached! - add timeout?
 	}
 
+	void RA8875::waitBusy(uint8_t res) 
+	{
+		uint8_t temp; 	
+		//unsigned long start = millis();//M.Sandercock
+		do {
+			if (res == 0x01) writeCommand(TFT_Register::DMACR);//dma
+			temp = readStatus();
+			//if ((millis() - start) > 10) return;
+		} while ((temp & res) == res);
+	}
+	
 	uint16_t RA8875::width() const
 	{
 		return m_width;
@@ -904,13 +1349,7 @@ namespace hw
 		setRegister16(TFT_Register::VSTR0, vsync_start - 1);                          // Vsync start position = VSTR + 1
 		setRegister8(TFT_Register::VPWR, RA8875_VPWR_LOW + vsync_pw - 1);             // Vsync pulse width = VPWR + 1
 
-		/* Set active window X */
-		setRegister16(TFT_Register::HSAW0, 0);                                        // horizontal start point
-		setRegister16(TFT_Register::HEAW0, m_width - 1);                              // horizontal end point
-
-		/* Set active window Y */
-		setRegister16(TFT_Register::VSAW0, 0);                                        // vertical start point
-		setRegister16(TFT_Register::VEAW0, m_height - 1);                             // vertical end point
+		_updateActiveWindow(true);
 
 		/* ToDo: Setup touch panel? */
 

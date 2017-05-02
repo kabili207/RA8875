@@ -41,6 +41,9 @@ void TFT_sleep(RA8875Handle tft, bool sleep) {
 	reinterpret_cast<hw::RA8875*>(tft)->sleep(sleep);
 }
 
+void TFT_setActiveWindow(RA8875Handle tft, uint16_t XL, uint16_t XR, uint16_t YT, uint16_t YB) {
+	reinterpret_cast<hw::RA8875*>(tft)->setActiveWindow(XL, XR, YT, YB);
+}
 
 /** Text functions **/
 void TFT_textMode(RA8875Handle tft) {
@@ -59,12 +62,28 @@ void TFT_textTransparent(RA8875Handle tft, uint16_t foreColor) {
 	reinterpret_cast<hw::RA8875*>(tft)->textTransparent(foreColor);
 }
 
-void TFT_textEnlarge(RA8875Handle tft, uint8_t scale) {
-	reinterpret_cast<hw::RA8875*>(tft)->textEnlarge(scale);
+//void TFT_textEnlarge(RA8875Handle tft, uint8_t scale) {
+//	reinterpret_cast<hw::RA8875*>(tft)->textEnlarge(scale);
+//}
+
+void TFT_setFontScale(RA8875Handle tft, uint8_t xscale,uint8_t yscale)
+{
+	reinterpret_cast<hw::RA8875*>(tft)->setFontScale(xscale, yscale);
 }
 
 void TFT_textWrite(RA8875Handle tft, const char* buffer) {
 	reinterpret_cast<hw::RA8875*>(tft)->textWrite(buffer);
+}
+
+void TFT_setInternalFont(RA8875Handle tft) {
+	reinterpret_cast<hw::RA8875*>(tft)->setInternalFont();
+}
+
+void TFT_setFont(RA8875Handle tft, TFT_Font font) {
+	reinterpret_cast<hw::RA8875*>(tft)->setFont(font);
+}
+void TFT_setUserFont(RA8875Handle tft, const tFont *font) {
+	reinterpret_cast<hw::RA8875*>(tft)->setUserFont(font);
 }
 
 /* Graphics functions */

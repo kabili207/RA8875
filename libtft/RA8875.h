@@ -4,6 +4,8 @@
 //
 #pragma once
 
+#define __PRGMTAG_
+
 #include "IDevice.h"
 #include "SPI.h"
 
@@ -42,6 +44,46 @@ enum TFT_DisplaySize
 	_800x480 = 1
 };
 
+typedef struct {
+		const uint8_t 	*data;
+		uint8_t 		image_width;
+		int				image_datalen;
+} tImage;
+
+typedef struct {
+		uint8_t 		char_code;
+		const tImage 	*image;
+} tChar;
+
+typedef struct {
+		uint8_t 		length;
+		const tChar 	*chars;
+		uint8_t			font_width;
+		uint8_t			font_height;
+		bool 			rle;
+} tFont;
+
+enum TFT_Font
+{
+	Internal = 0,
+	Calibri20,
+	Calibri24,
+	Calibri30,
+	Consolas20,
+	Consolas24,
+	ComicNeue20,
+	ComicNeue24,
+};
+
+// Font Parameters
+// index:x -> w,h,baselineLowOffset,baselineTopOffset,variableWidth
+const static uint8_t fontDimPar[4][5] = {
+	{8,16,2,4,0},// INT font
+	{8,16,3,0,0},// ROM X16
+	{12,24,2,2,0},//ROM X24
+	{16,32,2,2,0},//ROM X32
+};
+
 namespace hw
 {
 	class RA8875
@@ -55,15 +97,34 @@ namespace hw
 		void    softReset() const;
 		void    displayOn(bool on) const;
 		void    sleep(bool sleep) const;
+		void    setActiveWindow(void);
+		void    setActiveWindow(uint16_t XL,uint16_t XR ,uint16_t YT ,uint16_t YB);
+		void    getActiveWindow(uint16_t &XL,uint16_t &XR ,uint16_t &YT ,uint16_t &YB);
 
 		/* Text functions */
 		void    textMode() const;
-		void    textSetCursor(uint16_t x, uint16_t y) const;
-		void    textColor(uint16_t foreColor, uint16_t bgColor) const;
-		void    textTransparent(uint16_t foreColor) const;
+		void    textSetCursor(uint16_t x, uint16_t y);
+		void    textColor(uint16_t foreColor, uint16_t bgColor);
+		void    textTransparent(uint16_t foreColor);
 		void    textEnlarge(uint8_t scale);
-		void    textWrite(const char* buffer) const;
-
+		void    textWrite(const char* buffer);
+		void    setFontScale(uint8_t xscale,uint8_t yscale);
+		void    setFont(TFT_Font font);
+		void    setInternalFont();
+		void    setUserFont(const tFont *font);
+	
+	private:
+		void    _setFNTdimensions(uint8_t index);
+		void    _textWrite(const char* buffer, uint16_t len);
+		void    _charWriteR(const char c,uint8_t offset,uint16_t fcolor,uint16_t bcolor);
+		void    _charWrite(const char c,uint8_t offset);
+		int     _getCharCode(uint8_t ch);
+		void    _textPosition(int16_t x, int16_t y,bool update);
+		int16_t _STRlen_helper(const char*, uint16_t);
+		void    _drawChar_unc(int16_t x,int16_t y,int charW,int index,uint16_t fcolor);
+		void    _charLineRender(bool lineBuffer[],int charW,int16_t x,int16_t y,int16_t currentYposition,uint16_t fcolor);
+	
+	public:
 		/* Graphics functions */
 		void    graphicsMode() const;
 		void    setXY(uint16_t x, uint16_t y) const;
@@ -110,10 +171,12 @@ namespace hw
 		void     writeCommand(uint8_t d) const;
 		uint8_t  readStatus() const;
 		bool     waitPoll(TFT_Register reg, uint8_t f) const;
+		void     waitBusy(uint8_t res=0x80);//0x80, 0x40(BTE busy), 0x01(DMA busy)
 		uint16_t width() const;
 		uint16_t height() const;
 
 	private:
+		void _updateActiveWindow(bool full) const;
 		void _setSysClock(uint8_t pll1, uint8_t pll2, uint8_t pixclk);
 		void PLLinit() const;
 		void initialize() const;
@@ -136,9 +199,30 @@ namespace hw
 		Pin         m_interrupt;
 		uint16_t    m_width;
 		uint16_t    m_height;
-		uint8_t     m_textScale;
+		int16_t     m_activeWindowXL;
+		int16_t     m_activeWindowXR;
+		int16_t     m_activeWindowYT;
+		int16_t     m_activeWindowYB;
 		uint8_t     m_brightness;
+		uint16_t    m_foreColor;
+		uint16_t    m_backColor;
+		uint16_t    m_cursorX;
+		uint16_t    m_cursorY;
+		uint8_t     m_scaleX;
+		uint8_t     m_scaleY;
+		bool        m_scaling;
+		bool        m_renderFonts;
+		uint8_t     m_FNTspacing;
+		uint8_t     m_FNTinterline;
+		uint8_t     m_FNTwidth;
+		uint8_t     m_FNTheight;
+		uint8_t     m_FNTbaselineLow;
+		uint8_t     m_FNTbaselineTop;
+		bool        m_FNTcompression;
+		int         m_spaceCharWidth;
 		TFT_DisplaySize m_size;
+		const tFont * m_currentFont;
+	
 	};
 }
 

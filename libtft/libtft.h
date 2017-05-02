@@ -40,14 +40,20 @@ extern "C"
 	EXPORT void    TFT_softReset(RA8875Handle tft);
 	EXPORT void    TFT_displayOn(RA8875Handle tft, bool on);
 	EXPORT void    TFT_sleep(RA8875Handle tft, bool sleep);
+	//EXPORT void    TFT_setActiveWindow(void);
+	EXPORT void    TFT_setActiveWindow(RA8875Handle tft, uint16_t XL, uint16_t XR, uint16_t YT, uint16_t YB);
 
 	/* Text functions */
 	EXPORT void    TFT_textMode(RA8875Handle tft);
 	EXPORT void    TFT_textSetCursor(RA8875Handle tft, uint16_t x, uint16_t y);
 	EXPORT void    TFT_textColor(RA8875Handle tft, uint16_t foreColor, uint16_t bgColor);
 	EXPORT void    TFT_textTransparent(RA8875Handle tft, uint16_t foreColor);
-	EXPORT void    TFT_textEnlarge(RA8875Handle tft, uint8_t scale);
+	//EXPORT void    TFT_textEnlarge(RA8875Handle tft, uint8_t scale);
+	EXPORT void    TFT_setFontScale(RA8875Handle tft, uint8_t xscale,uint8_t yscale);
 	EXPORT void    TFT_textWrite(RA8875Handle tft, const char* buffer);
+	EXPORT void    TFT_setInternalFont(RA8875Handle tft);
+	EXPORT void    TFT_setFont(RA8875Handle tft, TFT_Font font);
+	EXPORT void    TFT_setUserFont(RA8875Handle tft, const tFont *font);
 
 	/* Graphics functions */
 	EXPORT void    TFT_graphicsMode(RA8875Handle tft);

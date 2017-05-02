@@ -69,11 +69,11 @@ int main(void)
 	TFT_textSetCursor(tft, 100, 100);
 	TFT_textTransparent(tft, RA8875_RED);
 	/* If necessary, enlarge the font */
-	TFT_textEnlarge(tft, 1);
+	TFT_setFontScale(tft, 1, 1);
 	/* ... and render some more text! */
 	TFT_textWrite(tft, string);
 	TFT_textSetCursor(tft, 100, 150);
-	TFT_textEnlarge(tft, 2);
+	TFT_setFontScale(tft, 2, 2);
 	TFT_textWrite(tft, string);
 	delay(500);
 
