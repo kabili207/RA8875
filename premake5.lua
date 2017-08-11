@@ -11,6 +11,10 @@ solution 'displayTest'
 	location ( _OPTIONS.to )
 	targetprefix ''
 
+	if os.execute("clang -v") == 0 then
+	   toolset "clang"
+	end
+	
 	flags { 
 		'ExtraWarnings', 
 		'StaticRuntime', 

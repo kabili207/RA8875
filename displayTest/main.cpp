@@ -43,6 +43,7 @@ int main(void)
 
 	/* Switch to text mode */
 	TFT_textMode(tft);
+	TFT_setFont(tft, TFT_Font::Calibri20);
 
 	/* Set a solid for + bg color ... */
 	/* ... or a fore color plus a transparent background */
@@ -69,6 +70,7 @@ int main(void)
 	TFT_textSetCursor(tft, 100, 100);
 	TFT_textTransparent(tft, RA8875_RED);
 	/* If necessary, enlarge the font */
+	TFT_setFont(tft, TFT_Font::Consolas24);
 	TFT_setFontScale(tft, 1, 1);
 	/* ... and render some more text! */
 	TFT_textWrite(tft, string);

@@ -376,7 +376,7 @@ namespace hw
 
 	RA8875::RA8875(IDevice& device, Pin cs, Pin rst, Pin wait, Pin interrupt)
 		: m_device(&device)
-		, m_spi(device, cs, 2000000, 0, false)
+		, m_spi(device, cs, 3000000, 0, false)
 		, m_rst(rst)
 		, m_wait(wait)
 		, m_interrupt(interrupt)
