@@ -49,6 +49,7 @@ int main(void)
 
 	/* Set the cursor location (in pixels) */
 	TFT_textSetCursor(tft, 10, 10);
+	TFT_setFont(tft, TFT_Font::Calibri20);
 
 	/* Render some text! */
 	char string[15] = "Hello, World! ";
