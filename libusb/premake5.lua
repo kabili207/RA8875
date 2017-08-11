@@ -6,7 +6,7 @@ project 'libusb'
 
 	includedirs { '.' }
 	files { '*.c', '*.h' }
-
+	
 	filter { 'system:windows' }
 		files {
 			'os/poll_windows.*',
@@ -15,7 +15,8 @@ project 'libusb'
 			'os/windows_nt_common.*',
 			'os/windows_winusb.*'
 		}
-		os.copyfile('config_windows.h', 'config.h')
+		defines { "_CONFIG_WINDOWS" }
+		--os.copyfile('config_windows.h', 'config.h')
 		
 	filter { 'system:linux' }
 		files {
@@ -25,5 +26,6 @@ project 'libusb'
 			'os/linux_udev.*',
 			'os/linuxj_usbfs.*',
 		}
-		os.copyfile('config_linux.h', 'config.h')
+		defines { "_CONFIG_LINUX" }
+		--os.copyfile('config_linux.h', 'config.h')
 

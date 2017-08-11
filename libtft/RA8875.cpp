@@ -376,7 +376,7 @@ namespace hw
 
 	RA8875::RA8875(IDevice& device, Pin cs, Pin rst, Pin wait, Pin interrupt)
 		: m_device(&device)
-		, m_spi(device, cs, 2000000, 0, false)
+		, m_spi(device, cs, 3000000, 0, false)
 		, m_rst(rst)
 		, m_wait(wait)
 		, m_interrupt(interrupt)
@@ -869,7 +869,7 @@ namespace hw
 		uint8_t currentXposition = 0;//the current position of the writing cursor in the x axis, from 0 to charW
 		uint8_t currentYposition = 1;//the current position of the writing cursor in the y axis, from 1 to _FNTheight
 		int currentByte = 0;//the current byte in reading (from 0 to totalBytes)
-		bool lineBuffer[charW];//the temporary line buffer (will be _FNTheight each char)
+		bool* lineBuffer = new bool[charW];//the temporary line buffer (will be _FNTheight each char)
 		int lineChecksum = 0;//part of the optimizer
 
 		//the main loop that will read all bytes of the glyph
@@ -898,6 +898,7 @@ namespace hw
 			}
 			currentByte++;
 		}
+		delete[] lineBuffer;
 	}
 
 	/**************************************************************************/
@@ -979,7 +980,7 @@ namespace hw
 		setXY(x,y);
 		writeCommand(RA8875_MRWC);
 
-		uint8_t data[(count * 2) + 1];
+		uint8_t* data = new uint8_t[(count * 2) + 1];
 		
 		data[0] = RA8875_DATAWRITE;
 		
@@ -990,6 +991,7 @@ namespace hw
 		}
 		
 		m_spi.write(data, (count * 2) + 1);
+		delete[] data;
 	}
 	
 	
