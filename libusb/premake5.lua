@@ -8,6 +8,7 @@ project 'libusb'
 	files { '*.c', '*.h' }
 	
 	filter { 'system:windows' }
+		defines { "_CONFIG_WINDOWS" }
 		files {
 			'os/poll_windows.*',
 			'os/threads_windows.*',
@@ -15,10 +16,9 @@ project 'libusb'
 			'os/windows_nt_common.*',
 			'os/windows_winusb.*'
 		}
-		defines { "_CONFIG_WINDOWS" }
-		--os.copyfile('config_windows.h', 'config.h')
 		
 	filter { 'system:linux' }
+		defines { "_CONFIG_LINUX" }
 		files {
 			'os/poll_posix.*',
 			'os/threads_posix.*',
@@ -26,6 +26,4 @@ project 'libusb'
 			'os/linux_udev.*',
 			'os/linuxj_usbfs.*',
 		}
-		defines { "_CONFIG_LINUX" }
-		--os.copyfile('config_linux.h', 'config.h')
 

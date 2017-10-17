@@ -6,3 +6,6 @@ project 'libftdi'
 
 	includedirs { '.', '../libusb' }
 	files { '*.c', '*.h' }
+	links {
+		'libusb'
+	}

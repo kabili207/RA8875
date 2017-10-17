@@ -10,7 +10,12 @@ solution 'displayTest'
 	platforms { 'x86', 'x86_64' }
 	location ( _OPTIONS.to )
 	targetprefix ''
+	optimize "Size"
 
+	if os.execute("clang -v") == 0 then
+	   toolset "clang"
+	end
+	
 	flags { 
 		'ExtraWarnings', 
 		'StaticRuntime', 

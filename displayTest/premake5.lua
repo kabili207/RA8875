@@ -5,9 +5,9 @@ project 'displayTest'
 
 	includedirs { '.', '../libusb', '../libftdi', '../libtft' }
 	files { '*.cpp', '*.h' }
-
+	
 	links {
-		'libusb',
+		'libtft',
 		'libftdi',
-		'libtft'
+		'libusb'
 	}
