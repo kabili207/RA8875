@@ -9,6 +9,5 @@
 /.vs/
 /build/
 
-# Ignore platform specifc config.h
-libusb/config.h
-
+# Ignore premake binary
+premake5.exe

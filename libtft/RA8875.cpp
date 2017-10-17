@@ -389,7 +389,12 @@ namespace hw
 		, m_scaleY(1)
 		, m_scaling(false)
 		, m_renderFonts(false)
+		, m_FNTspacing(0)
 		, m_FNTinterline(0)
+		, m_FNTwidth(0)
+		, m_FNTheight(0)
+		, m_FNTbaselineLow(0)
+		, m_FNTbaselineTop(0)
 		, m_size(_800x480)
 	{
 		m_device->setPinDirection(m_rst, Direction::Out);

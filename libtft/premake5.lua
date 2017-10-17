@@ -5,8 +5,7 @@ project 'libtft'
 
 	includedirs { '.', '../libusb', '../libftdi' }
 	files { '*.cpp', '*.h' }
-
 	links {
+		'libftdi',
 		'libusb',
-		'libftdi'
 	}
